@@ -816,7 +816,7 @@ elif menu == "2. Geran":
         x=nama_col,
         y=["PEMBERIAN", "PERBELANJAAN", "BYR BALIK"],
         barmode="group",
-        title="NAMA vs PEMBERIAN, PERBELANJAAN dan BYR BALIK",
+        title=" ",
         labels={
             "value": "Jumlah Amount in local currency",
             "variable": "LEGEND",
@@ -862,7 +862,7 @@ elif menu == "2. Geran":
         x=nama_col,
         y="BAKI GERAN",
         text=df_baki_geran["BAKI GERAN"].apply(format_nilai),
-        title="Baki Geran = Pemberian - Perbelanjaan - Bayar Balik",
+        title=" ",
         color_discrete_sequence=["#bde0fe"]
     )
 
