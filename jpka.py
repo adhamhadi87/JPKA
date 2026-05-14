@@ -212,7 +212,7 @@ def load_data():
 # Nota: tidak guna cache supaya perubahan Excel terus dibaca semula.
 # =======================
 def load_data_geran():
-    filename = "GL ADV 03-2026 14052026.xlsx"
+    filename = "GL ADV 03-2026 14052026.XLSX"
 
     try:
         df_data = pd.read_excel(filename, sheet_name="DATA")
