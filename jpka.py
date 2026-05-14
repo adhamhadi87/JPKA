@@ -169,7 +169,8 @@ def load_data():
         "03-2025": "JPKA_ANALISA PK CIDB 03-2025.xlsx",
         "06-2025": "JPKA_ANALISA PK CIDB 06-2025.xlsx",
         "09-2025": "JPKA_ANALISA PK CIDB 09-2025.xlsx",
-        "12-2025": "JPKA_ANALISA PK CIDB 12-2025.xlsx"
+        "12-2025": "JPKA_ANALISA PK CIDB 12-2025.xlsx",
+        "03-2026": "JPKA_ANALISA PK CIDB 03-2026.xlsx"
     }
 
     for q, filename in files.items():
@@ -180,9 +181,20 @@ def load_data():
             if "KOD" in df.columns and "KOD1" not in df.columns:
                 df = df.rename(columns={"KOD": "KOD1"})
 
+            # Standardize nama column untuk dashboard.
+            # Untuk fail 2026, column seperti BAJET 2026 / SASARAN Q1-26 / SEBENAR Q1-26
+            # akan ditukar kepada nama standard yang digunakan oleh dashboard.
+            rename_map = {
+                "BAJET 2026": "BAJET 2025",
+                "SASARAN Q1-26": "SASARAN Q1-25",
+                "SEBENAR Q1-26": "SEBENAR Q1-25"
+            }
+
+            df = df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns and v not in df.columns})
+
             df["Sumber"] = q
             df["Quarter"] = q
-            df["Tahun"] = 2025
+            df["Tahun"] = int(q.split("-")[1])
 
             numeric_cols = ["BAJET 2025", "SASARAN Q1-25", "SEBENAR Q1-25"]
             df = pastikan_numeric(df, numeric_cols)
@@ -263,11 +275,11 @@ if menu == "1. Belanja & Hasil":
                     st.write(f"- {err}")
         st.stop()
 
-    quarters_available = [q for q in ["03-2025", "06-2025", "09-2025", "12-2025"] if q in df_dict]
+    quarters_available = [q for q in ["03-2025", "06-2025", "09-2025", "12-2025", "03-2026"] if q in df_dict]
 
     with st.sidebar:
         st.markdown("### 🔎 PILIHAN PENAPIS")
-        default_quarter = ["12-2025"] if "12-2025" in quarters_available else quarters_available[:1]
+        default_quarter = ["03-2026"] if "03-2026" in quarters_available else (["12-2025"] if "12-2025" in quarters_available else quarters_available[:1])
         pilih_quarter = st.multiselect("Pilih Quarter", quarters_available, default=default_quarter)
 
     if not pilih_quarter:
@@ -804,7 +816,7 @@ elif menu == "2. Geran":
         x=nama_col,
         y=["PEMBERIAN", "PERBELANJAAN", "BYR BALIK"],
         barmode="group",
-        title=" ",
+        title="NAMA vs PEMBERIAN, PERBELANJAAN dan BYR BALIK",
         labels={
             "value": "Jumlah Amount in local currency",
             "variable": "LEGEND",
@@ -850,7 +862,7 @@ elif menu == "2. Geran":
         x=nama_col,
         y="BAKI GERAN",
         text=df_baki_geran["BAKI GERAN"].apply(format_nilai),
-        title=" ",
+        title="Baki Geran = Pemberian - Perbelanjaan - Bayar Balik",
         color_discrete_sequence=["#bde0fe"]
     )
 
