@@ -39,11 +39,11 @@ st.markdown("""
 def format_nilai(nilai):
     nilai = float(nilai)
     if nilai >= 1_000_000:
-        return f"RM {int(round(nilai/1_000_000))} Juta"
+        return f"RM {nilai/1_000_000:.1f} Juta"
     elif nilai >= 1_000:
-        return f"RM {int(round(nilai/1_000))} Ribu"
+        return f"RM {nilai/1_000:.1f} Ribu"
     else:
-        return f"RM {int(round(nilai))}"
+        return f"RM {nilai:.0f}"
 
 def hitung_prestasi(sebenar, sasaran):
     if sasaran == 0: return 0.0
@@ -91,31 +91,30 @@ if not df_dict:
 # =======================
 with st.sidebar:
     st.markdown("### 🔎 PILIHAN PENAPIS")
-    
     pilih_quarter = st.multiselect("Pilih Quarter",
                                    ["03-2025", "06-2025", "09-2025", "12-2025"],
                                    default=["12-2025"])
-
+    
     dfs = [df_dict[q] for q in pilih_quarter if q in df_dict]
     df_tapis = pd.concat(dfs, ignore_index=True)
     df_tapis.columns = df_tapis.columns.str.strip()
 
     senarai_ptj = sorted(df_tapis["PTJ"].dropna().astype(str).unique().tolist())
     pilih_ptj = st.multiselect("Pilih PTJ", senarai_ptj, default=senarai_ptj)
-
     df_tapis = df_tapis[df_tapis["PTJ"].isin(pilih_ptj)]
+
     senarai_ptj1 = sorted(df_tapis["PTJ1"].dropna().astype(str).unique().tolist())
     pilih_ptj1 = st.multiselect("Pilih PTJ1", senarai_ptj1, default=senarai_ptj1)
-
     df_tapis_ptj1 = df_tapis[df_tapis["PTJ1"].isin(pilih_ptj1)]
+
     senarai_kategori = sorted(df_tapis_ptj1["Kategori"].dropna().astype(str).unique().tolist())
     pilih_kategori = st.multiselect("Pilih Kategori", senarai_kategori, default=senarai_kategori)
-
     df_kat = df_tapis_ptj1[df_tapis_ptj1["Kategori"].isin(pilih_kategori)]
+
     senarai_desc = sorted(df_kat["DESC"].dropna().astype(str).unique().tolist())
     pilih_desc = st.multiselect("Pilih DESC", senarai_desc, default=senarai_desc)
-
     df_desc = df_kat[df_kat["DESC"].isin(pilih_desc)]
+
     senarai_kod1 = sorted(df_desc["KOD1"].dropna().astype(str).unique().tolist())
     pilih_kod1 = st.multiselect("Pilih KOD1", senarai_kod1, default=senarai_kod1)
 
@@ -123,14 +122,10 @@ with st.sidebar:
 # DATA AKHIR
 # =======================
 df_akhir = df_desc[df_desc["KOD1"].isin(pilih_kod1)].copy()
-
 df_akhir["Jenis_Belanja"] = df_akhir["Kategori"].apply(lambda x:
-    "Mengurus" if "Mengurus" in str(x) else 
-    "Program" if "Program" in str(x) else 
-    "Modal" if "Modal" in str(x) else 
-    "Hasil" if "Hasil" in str(x) else "Lain-lain")
+    "Mengurus" if "Mengurus" in str(x) else "Program" if "Program" in str(x) else
+    "Modal" if "Modal" in str(x) else "Hasil" if "Hasil" in str(x) else "Lain-lain")
 
-# =======================
 # TRAFFIC LIGHT
 # =======================
 st.markdown("### 🚦 STATUS PRESTASI PTJ1")
@@ -249,13 +244,16 @@ with st.expander("📋 RINGKASAN KESELURUHAN", expanded=False):
     else:
         st.info("Tiada data")
 
-# 2. Carta 1
-with st.expander("📊 CARTA 1: PERBANDINGAN MENGIKUT KATEGORI", expanded=False):
-    df_akhir["BAJET_JT"] = df_akhir["BAJET 2025"] / 1_000_000
-    df_akhir["SASARAN_JT"] = df_akhir["SASARAN Q1-25"] / 1_000_000
-    df_akhir["SEBENAR_JT"] = df_akhir["SEBENAR Q1-25"] / 1_000_000
 
+# =======================
+# CARTA 1: PERBANDINGAN MENGIKUT KATEGORI
+# =======================
+with st.expander("📊 CARTA 1: PERBANDINGAN MENGIKUT KATEGORI", expanded=False):
     if not df_akhir.empty:
+        df_akhir["BAJET_JT"] = df_akhir["BAJET 2025"] / 1_000_000
+        df_akhir["SASARAN_JT"] = df_akhir["SASARAN Q1-25"] / 1_000_000
+        df_akhir["SEBENAR_JT"] = df_akhir["SEBENAR Q1-25"] / 1_000_000
+
         if len(pilih_quarter) > 1:
             cols = st.columns(len(pilih_quarter))
             for i, q in enumerate(pilih_quarter):
@@ -267,7 +265,7 @@ with st.expander("📊 CARTA 1: PERBANDINGAN MENGIKUT KATEGORI", expanded=False)
                                  barmode="group", height=520,
                                  color_discrete_sequence=['#2C7DA6', '#E08E4E', '#2E8B6D'])
                     for trace in fig.data:
-                        trace.text = [f"RM {x:.1f} J" for x in trace.y]
+                        trace.text = [format_nilai(x * 1_000_000) for x in trace.y]
                         trace.textposition = 'outside'
                     st.plotly_chart(fig, use_container_width=True)
         else:
@@ -276,101 +274,100 @@ with st.expander("📊 CARTA 1: PERBANDINGAN MENGIKUT KATEGORI", expanded=False)
                           barmode="group", height=550,
                           color_discrete_sequence=['#2C7DA6', '#E08E4E', '#2E8B6D'])
             for trace in fig1.data:
-                trace.text = [f"RM {x:.1f} Juta" for x in trace.y]
+                trace.text = [format_nilai(x * 1_000_000) for x in trace.y]
                 trace.textposition = 'outside'
             st.plotly_chart(fig1, use_container_width=True)
 
-# 3. Carta 2
-with st.expander("📊 CARTA 2: PRESTASI MENGIKUT DESC", expanded=False):
+# =======================
+# CARTA 2: JUMLAH SEBENAR MENGIKUT QUARTER (BARU)
+# =======================
+with st.expander("📊 CARTA 2: JUMLAH SEBENAR MENGIKUT QUARTER", expanded=False):
+    if not df_akhir.empty:
+        df_total = df_akhir.groupby("Quarter")["SEBENAR Q1-25"].sum().reset_index()
+        df_total = df_total.sort_values("Quarter")
+        
+        fig_total = px.bar(df_total, x="Quarter", y="SEBENAR Q1-25",
+                           title="Jumlah Sebenar Mengikut Quarter",
+                           labels={"SEBENAR Q1-25": "Jumlah Sebenar (RM)"},
+                           text=df_total["SEBENAR Q1-25"].apply(format_nilai))
+        
+        fig_total.update_traces(textposition='outside', marker_color='#2E8B6D')
+        fig_total.update_layout(height=600, yaxis_title="Jumlah Sebenar (RM)")
+        
+        st.plotly_chart(fig_total, use_container_width=True)
+
+# =======================
+# CARTA 3: PRESTASI MENGIKUT DESC
+# =======================
+with st.expander("📊 CARTA 3: PRESTASI MENGIKUT DESC", expanded=False):
     if not df_akhir.empty:
         if len(pilih_quarter) > 1:
             cols = st.columns(len(pilih_quarter))
             for i, q in enumerate(pilih_quarter):
                 df_q = df_akhir[df_akhir["Quarter"] == q]
-                df_c2 = df_q.groupby("DESC", as_index=False).agg({"SASARAN_JT":"sum", "SEBENAR_JT":"sum"}).sort_values("SEBENAR_JT", ascending=False).head(20)
+                df_c2 = df_q.groupby("DESC", as_index=False).agg({"SASARAN Q1-25":"sum", "SEBENAR Q1-25":"sum"}).sort_values("SEBENAR Q1-25", ascending=False).head(20)
                 with cols[i]:
                     st.markdown(f"**Quarter {q}**")
-                    fig2 = px.bar(df_c2, y="DESC", x=["SASARAN_JT", "SEBENAR_JT"],
+                    fig2 = px.bar(df_c2, y="DESC", x=["SASARAN Q1-25", "SEBENAR Q1-25"],
                                   orientation='h', barmode="group", height=700,
                                   color_discrete_sequence=['#E08E4E', '#2E8B6D'])
                     for trace in fig2.data:
-                        trace.text = [f"RM {x:.1f} J" for x in trace.x]
+                        trace.text = [format_nilai(x) for x in trace.x]
                         trace.textposition = 'outside'
                     fig2.update_layout(yaxis=dict(categoryorder='array', categoryarray=df_c2["DESC"].tolist()))
                     st.plotly_chart(fig2, use_container_width=True)
         else:
-            df_c2 = df_akhir.groupby("DESC", as_index=False).agg({"SASARAN_JT":"sum", "SEBENAR_JT":"sum"}).sort_values("SEBENAR_JT", ascending=False).head(20)
-            fig2 = px.bar(df_c2, y="DESC", x=["SASARAN_JT", "SEBENAR_JT"],
+            df_c2 = df_akhir.groupby("DESC", as_index=False).agg({"SASARAN Q1-25":"sum", "SEBENAR Q1-25":"sum"}).sort_values("SEBENAR Q1-25", ascending=False).head(20)
+            fig2 = px.bar(df_c2, y="DESC", x=["SASARAN Q1-25", "SEBENAR Q1-25"],
                           orientation='h', barmode="group", height=700,
                           color_discrete_sequence=['#E08E4E', '#2E8B6D'])
             for trace in fig2.data:
-                trace.text = [f"RM {x:.1f} J" for x in trace.x]
+                trace.text = [format_nilai(x) for x in trace.x]
                 trace.textposition = 'outside'
             fig2.update_layout(yaxis=dict(categoryorder='array', categoryarray=df_c2["DESC"].tolist()))
             st.plotly_chart(fig2, use_container_width=True)
 
-# 4. Carta 3
-with st.expander("📈 CARTA 3: PRESTASI MENGIKUT PTJ1", expanded=False):
+# =======================
+# CARTA 4: PRESTASI MENGIKUT PTJ1
+# =======================
+with st.expander("📈 CARTA 4: PRESTASI MENGIKUT PTJ1", expanded=False):
     if not df_akhir.empty:
         df_c3 = df_akhir.groupby("PTJ1", as_index=False).agg({"SASARAN Q1-25": "sum", "SEBENAR Q1-25": "sum"})
         df_c3["Prestasi_%"] = df_c3.apply(lambda row: hitung_prestasi(row["SEBENAR Q1-25"], row["SASARAN Q1-25"]), axis=1)
         df_c3 = df_c3.sort_values(by="Prestasi_%", ascending=False).reset_index(drop=True)
-      
+        
         fig3 = go.Figure()
-        fig3.add_trace(go.Bar(
-            x=df_c3["PTJ1"], y=df_c3["Prestasi_%"], name="Prestasi",
-            marker_color="#2E8B6D",
-            text=df_c3["Prestasi_%"].round(0).astype(int).astype(str) + "%",
-            textposition="inside"
-        ))
-        fig3.add_trace(go.Scatter(
-            x=df_c3["PTJ1"], y=[100]*len(df_c3), name="Sasaran 100%",
-            line=dict(color="#E08E4E", width=3, dash="dash"), mode="lines"
-        ))
-        fig3.add_trace(go.Scatter(
-            x=df_c3["PTJ1"], y=df_c3["Prestasi_%"], name="Pencapaian",
-            line=dict(color="#C44D4D", width=4), mode="lines+markers+text",
-            text=df_c3["Prestasi_%"].round(0).astype(int).astype(str) + "%",
-            textposition="top center", textfont=dict(size=13, color="#C44D4D")
-        ))
-      
-        fig3.update_layout(
-            height=700,
-            title="CARTA 3: Prestasi Mengikut PTJ1",
-            xaxis_title="PTJ1",
-            yaxis_title="Peratusan (%)",
-            yaxis=dict(range=[0, 140]),
-            legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="center", x=0.5),
-            xaxis_tickangle=-45,
-            template="plotly_white"
-        )
+        fig3.add_trace(go.Bar(x=df_c3["PTJ1"], y=df_c3["Prestasi_%"], name="Prestasi",
+                              marker_color="#2E8B6D", text=df_c3["Prestasi_%"].round(0).astype(int).astype(str) + "%", textposition="inside"))
+        fig3.add_trace(go.Scatter(x=df_c3["PTJ1"], y=[100]*len(df_c3), name="Sasaran 100%",
+                                  line=dict(color="#E08E4E", width=3, dash="dash"), mode="lines"))
+        fig3.add_trace(go.Scatter(x=df_c3["PTJ1"], y=df_c3["Prestasi_%"], name="Pencapaian",
+                                  line=dict(color="#C44D4D", width=4), mode="lines+markers+text",
+                                  text=df_c3["Prestasi_%"].round(0).astype(int).astype(str) + "%",
+                                  textposition="top center"))
+        
+        fig3.update_layout(height=700, title="CARTA 4: Prestasi Mengikut PTJ1",
+                           xaxis_title="PTJ1", yaxis_title="Peratusan (%)", yaxis=dict(range=[0, 140]),
+                           legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="center", x=0.5),
+                           xaxis_tickangle=-45, template="plotly_white")
         st.plotly_chart(fig3, use_container_width=True)
 
-# 5. Summary + Download
+# =======================
+# SUMMARY
+# =======================
 with st.expander("📋 SUMMARY KESELURUHAN - BOLEH DOWNLOAD EXCEL", expanded=False):
     if not df_akhir.empty:
         summary = df_akhir.groupby(["PTJ1", "Kategori", "DESC", "Quarter"]).agg({
-            "BAJET 2025": "sum",
-            "SASARAN Q1-25": "sum",
-            "SEBENAR Q1-25": "sum"
+            "BAJET 2025": "sum", "SASARAN Q1-25": "sum", "SEBENAR Q1-25": "sum"
         }).reset_index()
-
-        summary["Prestasi_%"] = summary.apply(
-            lambda row: hitung_prestasi(row["SEBENAR Q1-25"], row["SASARAN Q1-25"]), axis=1
-        )
+        summary["Prestasi_%"] = summary.apply(lambda row: hitung_prestasi(row["SEBENAR Q1-25"], row["SASARAN Q1-25"]), axis=1)
         summary = summary.round(2)
-
         st.dataframe(summary, use_container_width=True, hide_index=True)
-
+        
         excel_file = to_excel(summary)
-        st.download_button(
-            label="📥 Download Summary sebagai Excel",
-            data=excel_file,
-            file_name=f"Summary_CIDB_{'_'.join(pilih_quarter)}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True
-        )
-    else:
-        st.warning("Tiada data untuk dipaparkan.")
+        st.download_button("📥 Download Summary sebagai Excel", data=excel_file,
+                           file_name=f"Summary_CIDB_{'_'.join(pilih_quarter)}.xlsx",
+                           mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                           use_container_width=True)
 
 st.caption(f"Quarter: {', '.join(pilih_quarter)} • Dashboard CIDB JPKA")
