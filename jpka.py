@@ -132,6 +132,30 @@ def unique_sorted(series):
     return sorted(series.dropna().astype(str).unique().tolist())
 
 
+
+def kemas_label_bajet(trace):
+    """Tukar nama legend chart kepada label ringkas."""
+    trace.name = (
+        str(trace.name)
+        .replace("BAJET_JT", "Bajet")
+        .replace("SASARAN_JT", "Sasaran")
+        .replace("SEBENAR_JT", "Sebenar")
+        .replace("BAJET 2025", "Bajet")
+        .replace("SASARAN Q1-25", "Sasaran")
+        .replace("SEBENAR Q1-25", "Sebenar")
+    )
+    return trace
+
+
+def rename_summary_columns(df):
+    """Tukar nama column output kepada label ringkas."""
+    return df.rename(columns={
+        "BAJET 2025": "Bajet",
+        "SASARAN Q1-25": "Sasaran",
+        "SEBENAR Q1-25": "Sebenar"
+    })
+
+
 def detect_amount_column(df):
     calon = [
         "Amount in local currency", "AMOUNT IN LOCAL CURRENCY",
@@ -498,13 +522,14 @@ if menu == "1. Belanja & Hasil":
                         y=["BAJET_JT", "SASARAN_JT", "SEBENAR_JT"],
                         barmode="group",
                         height=520,
-                        # PEMBERIAN = Kuning
-        # PERBELANJAAN = Merah
-        # BYR BALIK = Hijau
-        # Warna soft / pastel
-        color_discrete_sequence=["#f6d365", "#f4978e", "#95d5b2"]
+                        labels={
+                            "value": "Nilai",
+                            "variable": "Jenis"
+                        },
+                        color_discrete_sequence=["#2C7DA6", "#E08E4E", "#2E8B6D"]
                     )
                     for trace in fig.data:
+                        kemas_label_bajet(trace)
                         trace.text = [format_nilai(x * 1_000_000) for x in trace.y]
                         trace.textposition = "outside"
                     st.plotly_chart(fig, use_container_width=True)
@@ -520,9 +545,14 @@ if menu == "1. Belanja & Hasil":
                 y=["BAJET_JT", "SASARAN_JT", "SEBENAR_JT"],
                 barmode="group",
                 height=550,
+                labels={
+                    "value": "Nilai",
+                    "variable": "Jenis"
+                },
                 color_discrete_sequence=["#2C7DA6", "#E08E4E", "#2E8B6D"]
             )
             for trace in fig1.data:
+                kemas_label_bajet(trace)
                 trace.text = [format_nilai(x * 1_000_000) for x in trace.y]
                 trace.textposition = "outside"
             st.plotly_chart(fig1, use_container_width=True)
@@ -562,9 +592,14 @@ if menu == "1. Belanja & Hasil":
                         orientation="h",
                         barmode="group",
                         height=700,
+                        labels={
+                            "value": "Nilai",
+                            "variable": "Jenis"
+                        },
                         color_discrete_sequence=["#E08E4E", "#2E8B6D"]
                     )
                     for trace in fig2.data:
+                        kemas_label_bajet(trace)
                         trace.text = [format_nilai(x) for x in trace.x]
                         trace.textposition = "outside"
                     fig2.update_layout(yaxis=dict(categoryorder="array", categoryarray=df_c2["DESC"].tolist()))
@@ -583,9 +618,14 @@ if menu == "1. Belanja & Hasil":
                 orientation="h",
                 barmode="group",
                 height=700,
+                labels={
+                    "value": "Nilai",
+                    "variable": "Jenis"
+                },
                 color_discrete_sequence=["#E08E4E", "#2E8B6D"]
             )
             for trace in fig2.data:
+                kemas_label_bajet(trace)
                 trace.text = [format_nilai(x) for x in trace.x]
                 trace.textposition = "outside"
             fig2.update_layout(yaxis=dict(categoryorder="array", categoryarray=df_c2["DESC"].tolist()))
@@ -643,6 +683,7 @@ if menu == "1. Belanja & Hasil":
             axis=1
         )
         summary = summary.round(2)
+        summary = rename_summary_columns(summary)
         st.dataframe(summary, use_container_width=True, hide_index=True)
 
         excel_file = to_excel(summary)
