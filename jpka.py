@@ -451,10 +451,10 @@ def kemas_label_bajet(trace):
     trace.name = (
         str(trace.name)
         .replace("BAJET_JT", "Bajet")
-        .replace("SASARAN_JT", "Sasaran")
+        .replace("SASARAN_JT", "Bajet Qtr")
         .replace("SEBENAR_JT", "Sebenar")
         .replace("BAJET 2025", "Bajet")
-        .replace("SASARAN Q1-25", "Sasaran")
+        .replace("SASARAN Q1-25", "Bajet Qtr")
         .replace("SEBENAR Q1-25", "Sebenar")
     )
     return trace
@@ -468,7 +468,7 @@ def rename_summary_columns(df):
         "Quarter": "Tempoh",
         "KOD1": "Kod Item",
         "BAJET 2025": "Bajet",
-        "SASARAN Q1-25": "Sasaran",
+        "SASARAN Q1-25": "Bajet Qtr",
         "SEBENAR Q1-25": "Sebenar"
     })
 
@@ -1049,7 +1049,7 @@ if menu == "1. Belanja & Hasil":
                                 <span style="font-weight:bold; color:#2C7DA6;">{format_nilai(b)}</span>
                             </div>
                             <div class="metric-row">
-                                <span class="metric-label">Sasaran</span>
+                                <span class="metric-label">Bajet Qtr</span>
                                 <span style="font-weight:bold; color:#E08E4E;">{format_nilai(s)}</span>
                             </div>
                             <div class="metric-row">
@@ -1498,8 +1498,107 @@ if menu == "1. Belanja & Hasil":
             )
             st.plotly_chart(fig2, use_container_width=True)
 
-    with st.expander("📈 CARTA 4: PRESTASI  PTJ", expanded=False):
-        # Formula Carta 4:
+
+
+    with st.expander("📊 CARTA 4: BY KOD ITEM", expanded=False):
+        df_by_kod_item = (
+            df_akhir.groupby(["KOD1"], as_index=False)
+            .agg({
+                "SEBENAR Q1-25": "sum"
+            })
+        )
+
+        df_by_kod_item["SEBENAR_JT"] = df_by_kod_item["SEBENAR Q1-25"] / 1_000_000
+
+        df_by_kod_item = (
+            df_by_kod_item
+            .sort_values("SEBENAR Q1-25", ascending=False)
+            .head(25)
+        )
+
+        # Warna selang-seli soft & pekat ala 3D corporate
+        warna_bars_kod_item = []
+        for i in range(len(df_by_kod_item)):
+            if i % 2 == 0:
+                warna_bars_kod_item.append("rgba(125,211,252,0.78)")  # soft blue
+            else:
+                warna_bars_kod_item.append("rgba(14,165,233,0.95)")   # deep blue
+
+        fig_by_kod_item = px.bar(
+            df_by_kod_item,
+            y="KOD1",
+            x="SEBENAR_JT",
+            orientation="h",
+            height=850,
+            text=df_by_kod_item["SEBENAR Q1-25"].apply(format_nilai),
+            labels={
+                "KOD1": "Kod Item",
+                "SEBENAR_JT": "Sebenar"
+            }
+        )
+
+        fig_by_kod_item.update_traces(
+            marker_color=warna_bars_kod_item
+        )
+
+        fig_by_kod_item.update_traces(
+            textposition="outside",
+            cliponaxis=False,
+            constraintext="none",
+            textfont=dict(
+                size=11,
+                color="#0f172a",
+                family="Arial Black"
+            ),
+            marker=dict(
+                line=dict(
+                    color="rgba(255,255,255,0.78)",
+                    width=1.5
+                )
+            ),
+            opacity=0.96,
+            name="Sebenar",
+
+            # effect ala 3D/glow
+            hovertemplate="<b>%{y}</b><br>Sebenar: %{text}<extra></extra>"
+        )
+
+        max_x_kod_item = (
+            df_by_kod_item["SEBENAR_JT"].max()
+            if not df_by_kod_item.empty
+            else 0
+        )
+
+        fig_by_kod_item.update_layout(
+            title=" ",
+            yaxis=dict(
+                categoryorder="array",
+                categoryarray=df_by_kod_item["KOD1"].tolist()
+            ),
+            xaxis_range=[0, max_x_kod_item * 1.30 if max_x_kod_item else None],
+            xaxis_title="Sebenar",
+            yaxis_title="Kod Item",
+            legend_title_text="Jenis",
+            template="plotly_white",
+            paper_bgcolor="rgba(255,255,255,0)",
+            plot_bgcolor="rgba(241,245,249,0.82)",
+            font=dict(
+                family="Arial",
+                color="#334155"
+            ),
+            title_font=dict(
+                size=22,
+                color="#0f172a",
+                family="Arial Black"
+            ),
+            margin=dict(t=120, b=120, l=180, r=120),
+            showlegend=False
+        )
+
+        st.plotly_chart(fig_by_kod_item, use_container_width=True)
+
+    with st.expander("📈 CARTA 5: PRESTASI  PTJ", expanded=False):
+        # Formula Carta 5:
         # % Prestasi   = SEBENAR / BAJET
         # % Sasaran    = SASARAN / BAJET
         # % Pencapaian = SEBENAR / SASARAN
@@ -1797,11 +1896,11 @@ if menu == "1. Belanja & Hasil":
             "Item": "",
             "Tempoh": "",
             "Bajet": pd.to_numeric(summary["Bajet"], errors="coerce").fillna(0).sum(),
-            "Sasaran": pd.to_numeric(summary["Sasaran"], errors="coerce").fillna(0).sum(),
+            "Bajet Qtr": pd.to_numeric(summary["Bajet Qtr"], errors="coerce").fillna(0).sum(),
             "Sebenar": pd.to_numeric(summary["Sebenar"], errors="coerce").fillna(0).sum(),
             "Prestasi_%": hitung_prestasi(
                 pd.to_numeric(summary["Sebenar"], errors="coerce").fillna(0).sum(),
-                pd.to_numeric(summary["Sasaran"], errors="coerce").fillna(0).sum()
+                pd.to_numeric(summary["Bajet Qtr"], errors="coerce").fillna(0).sum()
             )
         }
 
@@ -1813,7 +1912,7 @@ if menu == "1. Belanja & Hasil":
         # Paparan summary dengan comma style pada semua nilai numeric.
         summary_show = dataframe_comma_style(
             summary,
-            money_cols=["Bajet", "Sasaran", "Sebenar"],
+            money_cols=["Bajet", "Bajet Qtr", "Sebenar"],
             percent_cols=["Prestasi_%"]
         )
 
