@@ -684,9 +684,6 @@ def load_data():
 
     files = {
         "03-2025": "JPKA_ANALISA PK CIDB 03-2025.xlsx",
-        "06-2025": "JPKA_ANALISA PK CIDB 06-2025.xlsx",
-        "09-2025": "JPKA_ANALISA PK CIDB 09-2025.xlsx",
-        "12-2025": "JPKA_ANALISA PK CIDB 12-2025.xlsx",
         "03-2026": "JPKA_ANALISA PK CIDB 03-2026.xlsx"
     }
 
@@ -811,7 +808,7 @@ if menu == "1. Belanja & Hasil":
                     st.write(f"- {err}")
         st.stop()
 
-    quarters_available = [q for q in ["03-2025", "06-2025", "09-2025", "12-2025", "03-2026"] if q in df_dict]
+    quarters_available = [q for q in ["03-2025", "03-2026"] if q in df_dict]
 
     with st.sidebar:
         st.markdown("### 🔎 PILIHAN ")
@@ -1133,7 +1130,7 @@ if menu == "1. Belanja & Hasil":
         # Jika sidebar pilih satu tempoh sahaja, tempoh sebelum tetap boleh pilih
         # daripada semua file Excel yang berjaya dibaca.
         semua_quarter_available = [
-            q for q in ["03-2025", "06-2025", "09-2025", "12-2025", "03-2026"]
+            q for q in ["03-2025", "03-2026"]
             if q in df_dict
         ]
 
@@ -1149,7 +1146,7 @@ if menu == "1. Belanja & Hasil":
         ]
 
         default_sebelum_multi = [
-            q for q in ["03-2025", "06-2025", "09-2025", "12-2025"]
+            q for q in ["03-2025"]
             if q in pilihan_sebelum
         ]
 
@@ -1210,7 +1207,7 @@ if menu == "1. Belanja & Hasil":
 
         df_total_chart = pd.DataFrame(df_carta2_list)
 
-        susunan_quarter_carta2 = ["03-2025", "06-2025", "09-2025", "12-2025", "03-2026"]
+        susunan_quarter_carta2 = ["03-2025", "03-2026"]
         df_total_chart["Quarter"] = pd.Categorical(
             df_total_chart["Quarter"],
             categories=susunan_quarter_carta2,
@@ -1570,7 +1567,7 @@ if menu == "1. Belanja & Hasil":
         )
 
         fig_by_kod_item.update_layout(
-            title=" ",
+            title="Carta By Kod Item - Sebenar",
             yaxis=dict(
                 categoryorder="array",
                 categoryarray=df_by_kod_item["KOD1"].tolist()
