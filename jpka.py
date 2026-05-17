@@ -837,26 +837,396 @@ if menu == "1. Belanja & Hasil":
         st.write(missing_cols)
         st.stop()
 
+    # =======================
+    # EXCEL-STYLE CONNECTED SLICER - FINAL V2
+    #
+    # Default:
+    # - Semua slicer selected all.
+    #
+    # Rule:
+    # - Pejabat tak boleh kosong. Jika clear, auto pilih semua Pejabat.
+    # - PTJ tak boleh kosong. Options ikut Pejabat. Jika clear, auto pilih semua PTJ berkaitan Pejabat.
+    # - Kategori at least 1 selected. Jika clear, auto pilih semua Kategori berkaitan Pejabat/PTJ.
+    # - Item boleh clear dan refer Kategori.
+    # - Kod Item boleh clear dan refer Item.
+    # - Contoh pilih Kategori = Hasil:
+    #   Pejabat/PTJ/Item/Kod Item auto tinggal dan auto selected yang berkaitan.
+    # =======================
+
+    def _as_list(value):
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return value
+        return [value]
+
+    def _unique_col(df_source, col):
+        if col not in df_source.columns:
+            return []
+        return unique_sorted(df_source[col])
+
+    def _filter_df(df_source, filters):
+        df_temp = df_source.copy()
+        for col, vals in filters.items():
+            vals = _as_list(vals)
+            if vals and col in df_temp.columns:
+                df_temp = df_temp[df_temp[col].astype(str).isin(vals)]
+        return df_temp
+
+    def _set_all_from_df(df_related):
+        """Auto select semua slicer mengikut dataframe berkaitan."""
+        st.session_state["belanja_pejabat_final2"] = _unique_col(df_related, "PTJ")
+        st.session_state["belanja_ptj_final2"] = _unique_col(df_related, "PTJ1")
+        st.session_state["belanja_kategori_final2"] = _unique_col(df_related, "Kategori")
+        st.session_state["belanja_item_final2"] = _unique_col(df_related, "DESC")
+        st.session_state["belanja_kod_item_final2"] = _unique_col(df_related, "KOD1")
+
+    def _base_df():
+        return st.session_state.get("_belanja_slicer_base_df_v2", pd.DataFrame())
+
+    def _sync_from_pejabat():
+        df_base = _base_df()
+        if df_base.empty:
+            return
+
+        pejabat_vals = _as_list(st.session_state.get("belanja_pejabat_final2", []))
+        if not pejabat_vals:
+            pejabat_vals = _unique_col(df_base, "PTJ")
+            st.session_state["belanja_pejabat_final2"] = pejabat_vals
+
+        df_related = _filter_df(df_base, {"PTJ": pejabat_vals})
+        if df_related.empty:
+            df_related = df_base.copy()
+
+        _set_all_from_df(df_related)
+
+    def _sync_from_ptj():
+        df_base = _base_df()
+        if df_base.empty:
+            return
+
+        pejabat_vals = _as_list(st.session_state.get("belanja_pejabat_final2", []))
+        if not pejabat_vals:
+            pejabat_vals = _unique_col(df_base, "PTJ")
+            st.session_state["belanja_pejabat_final2"] = pejabat_vals
+
+        df_by_pejabat = _filter_df(df_base, {"PTJ": pejabat_vals})
+
+        ptj_vals = _as_list(st.session_state.get("belanja_ptj_final2", []))
+        valid_ptj = _unique_col(df_by_pejabat, "PTJ1")
+        ptj_vals = [x for x in ptj_vals if x in set(valid_ptj)]
+
+        if not ptj_vals:
+            ptj_vals = valid_ptj
+            st.session_state["belanja_ptj_final2"] = ptj_vals
+
+        df_related = _filter_df(df_by_pejabat, {"PTJ1": ptj_vals})
+        if df_related.empty:
+            df_related = df_by_pejabat.copy()
+
+        _set_all_from_df(df_related)
+
+    def _sync_from_kategori():
+        df_base = _base_df()
+        if df_base.empty:
+            return
+
+        kategori_vals = _as_list(st.session_state.get("belanja_kategori_final2", []))
+
+        # Kategori wajib at least 1. Jika clear, auto pilih semua kategori.
+        if not kategori_vals:
+            kategori_vals = _unique_col(df_base, "Kategori")
+            st.session_state["belanja_kategori_final2"] = kategori_vals
+
+        df_related = _filter_df(df_base, {"Kategori": kategori_vals})
+        if df_related.empty:
+            df_related = df_base.copy()
+
+        # Pilih kategori user kekal, slicer lain auto ikut kategori.
+        # Item/Kod Item auto selected semua yang berkaitan bila kategori dipilih.
+        st.session_state["belanja_pejabat_final2"] = _unique_col(df_related, "PTJ")
+        st.session_state["belanja_ptj_final2"] = _unique_col(df_related, "PTJ1")
+        st.session_state["belanja_kategori_final2"] = kategori_vals
+        st.session_state["belanja_item_final2"] = _unique_col(df_related, "DESC")
+        st.session_state["belanja_kod_item_final2"] = _unique_col(df_related, "KOD1")
+
+    def _sync_from_item():
+        df_base = _base_df()
+        if df_base.empty:
+            return
+
+        kategori_vals = _as_list(st.session_state.get("belanja_kategori_final2", []))
+        if not kategori_vals:
+            kategori_vals = _unique_col(df_base, "Kategori")
+            st.session_state["belanja_kategori_final2"] = kategori_vals
+
+        df_by_kategori = _filter_df(df_base, {"Kategori": kategori_vals})
+
+        item_vals = _as_list(st.session_state.get("belanja_item_final2", []))
+        valid_item = _unique_col(df_by_kategori, "DESC")
+        item_vals = [x for x in item_vals if x in set(valid_item)]
+
+        # Item boleh clear.
+        # Jika clear, maksudnya All Item untuk kategori dipilih.
+        if item_vals:
+            df_related = _filter_df(df_by_kategori, {"DESC": item_vals})
+        else:
+            df_related = df_by_kategori.copy()
+
+        if df_related.empty:
+            df_related = df_by_kategori.copy()
+
+        st.session_state["belanja_pejabat_final2"] = _unique_col(df_related, "PTJ")
+        st.session_state["belanja_ptj_final2"] = _unique_col(df_related, "PTJ1")
+        st.session_state["belanja_kategori_final2"] = _unique_col(df_related, "Kategori")
+        st.session_state["belanja_item_final2"] = item_vals
+
+        # Kod Item WAJIB refer Item yang selected.
+        # Bila Item dipilih semula selepas clear, Kod Item auto select semua kod berkaitan Item itu.
+        # Jika Item kosong, Kod Item ikut semua kod dalam kategori.
+        st.session_state["belanja_kod_item_final2"] = _unique_col(df_related, "KOD1")
+
+    def _sync_from_kod_item():
+        df_base = _base_df()
+        if df_base.empty:
+            return
+
+        kategori_vals = _as_list(st.session_state.get("belanja_kategori_final2", []))
+        if not kategori_vals:
+            kategori_vals = _unique_col(df_base, "Kategori")
+            st.session_state["belanja_kategori_final2"] = kategori_vals
+
+        item_vals = _as_list(st.session_state.get("belanja_item_final2", []))
+        kod_vals = _as_list(st.session_state.get("belanja_kod_item_final2", []))
+
+        # Kod Item refer kepada Item.
+        # Jika Item kosong, guna konteks Kategori sebagai fallback.
+        if item_vals:
+            df_by_context = _filter_df(df_base, {"DESC": item_vals})
+        else:
+            df_by_context = _filter_df(df_base, {"Kategori": kategori_vals})
+
+        valid_kod = _unique_col(df_by_context, "KOD1")
+        kod_vals = [x for x in kod_vals if x in set(valid_kod)]
+
+        # Kod Item boleh clear.
+        # Jika clear, maksudnya All Kod Item untuk Item dipilih.
+        if kod_vals:
+            df_related = _filter_df(df_by_context, {"KOD1": kod_vals})
+        else:
+            df_related = df_by_context.copy()
+
+        if df_related.empty:
+            df_related = df_by_context.copy()
+
+        st.session_state["belanja_pejabat_final2"] = _unique_col(df_related, "PTJ")
+        st.session_state["belanja_ptj_final2"] = _unique_col(df_related, "PTJ1")
+        st.session_state["belanja_kategori_final2"] = _unique_col(df_related, "Kategori")
+        st.session_state["belanja_item_final2"] = [
+            x for x in item_vals
+            if x in set(_unique_col(df_related, "DESC"))
+        ]
+        st.session_state["belanja_kod_item_final2"] = kod_vals
+
     with st.sidebar:
-        senarai_ptj = unique_sorted(df_tapis["PTJ"])
-        pilih_ptj = st.multiselect("Pilih Pejabat", senarai_ptj, default=senarai_ptj)
-        df_tapis = df_tapis[df_tapis["PTJ"].astype(str).isin(pilih_ptj)]
+        df_slicer_base = df_tapis.copy()
+        st.session_state["_belanja_slicer_base_df_v2"] = df_slicer_base
 
-        senarai_ptj1 = unique_sorted(df_tapis["PTJ1"])
-        pilih_ptj1 = st.multiselect("Pilih PTJ", senarai_ptj1, default=senarai_ptj1)
-        df_tapis = df_tapis[df_tapis["PTJ1"].astype(str).isin(pilih_ptj1)]
+        full_pejabat = _unique_col(df_slicer_base, "PTJ")
+        full_ptj = _unique_col(df_slicer_base, "PTJ1")
+        full_kategori = _unique_col(df_slicer_base, "Kategori")
+        full_item = _unique_col(df_slicer_base, "DESC")
+        full_kod_item = _unique_col(df_slicer_base, "KOD1")
 
-        senarai_kategori = unique_sorted(df_tapis["Kategori"])
-        pilih_kategori = st.multiselect("Pilih Kategori", senarai_kategori, default=senarai_kategori)
-        df_tapis = df_tapis[df_tapis["Kategori"].astype(str).isin(pilih_kategori)]
+        if "belanja_final2_slicer_initialized" not in st.session_state:
+            st.session_state["belanja_pejabat_final2"] = full_pejabat
+            st.session_state["belanja_ptj_final2"] = full_ptj
+            st.session_state["belanja_kategori_final2"] = full_kategori
+            st.session_state["belanja_item_final2"] = full_item
+            st.session_state["belanja_kod_item_final2"] = full_kod_item
+            st.session_state["belanja_final2_slicer_initialized"] = True
 
-        senarai_desc = unique_sorted(df_tapis["DESC"])
-        pilih_desc = st.multiselect("Pilih Item", senarai_desc, default=senarai_desc)
-        df_tapis = df_tapis[df_tapis["DESC"].astype(str).isin(pilih_desc)]
+        # Clean invalid values after tempoh change.
+        valid_map = {
+            "belanja_pejabat_final2": full_pejabat,
+            "belanja_ptj_final2": full_ptj,
+            "belanja_kategori_final2": full_kategori,
+            "belanja_item_final2": full_item,
+            "belanja_kod_item_final2": full_kod_item,
+        }
 
-        senarai_kod1 = unique_sorted(df_tapis["KOD1"])
-        pilih_kod1 = st.multiselect("Pilih Kod Item", senarai_kod1, default=senarai_kod1)
-        df_tapis = df_tapis[df_tapis["KOD1"].astype(str).isin(pilih_kod1)]
+        for key_v, options_v in valid_map.items():
+            current_v = _as_list(st.session_state.get(key_v, []))
+            cleaned_v = [x for x in current_v if x in set(options_v)]
+            st.session_state[key_v] = cleaned_v
+
+        # Mandatory defaults if accidentally empty.
+        if not st.session_state.get("belanja_pejabat_final2", []):
+            st.session_state["belanja_pejabat_final2"] = full_pejabat
+
+        pejabat_vals_for_ptj = _as_list(st.session_state.get("belanja_pejabat_final2", []))
+        df_for_ptj = _filter_df(df_slicer_base, {"PTJ": pejabat_vals_for_ptj})
+        opt_ptj = _unique_col(df_for_ptj, "PTJ1")
+
+        if not st.session_state.get("belanja_ptj_final2", []):
+            st.session_state["belanja_ptj_final2"] = opt_ptj
+
+        if not st.session_state.get("belanja_kategori_final2", []):
+            st.session_state["belanja_kategori_final2"] = full_kategori
+
+        # Options render:
+        pejabat_selected = _as_list(st.session_state.get("belanja_pejabat_final2", []))
+        df_parent_pejabat = _filter_df(df_slicer_base, {"PTJ": pejabat_selected})
+        opt_ptj = _unique_col(df_parent_pejabat, "PTJ1")
+
+        ptj_selected = _as_list(st.session_state.get("belanja_ptj_final2", []))
+        ptj_selected = [x for x in ptj_selected if x in set(opt_ptj)]
+        if not ptj_selected:
+            ptj_selected = opt_ptj
+            st.session_state["belanja_ptj_final2"] = ptj_selected
+
+        df_parent = _filter_df(df_parent_pejabat, {"PTJ1": ptj_selected})
+
+        kategori_selected = _as_list(st.session_state.get("belanja_kategori_final2", []))
+        kategori_selected = [x for x in kategori_selected if x in set(_unique_col(df_parent, "Kategori"))]
+        if not kategori_selected:
+            kategori_selected = _unique_col(df_parent, "Kategori")
+            st.session_state["belanja_kategori_final2"] = kategori_selected
+
+        # Item/Kod options refer Kategori.
+        # Item boleh clear = All Item.
+        # Kod Item boleh clear = All Kod Item.
+        # Kod Item options ikut Kategori & Item jika Item dipilih.
+        item_selected = _as_list(st.session_state.get("belanja_item_final2", []))
+        kod_selected = _as_list(st.session_state.get("belanja_kod_item_final2", []))
+
+        df_by_kategori = _filter_df(df_parent, {"Kategori": kategori_selected})
+
+        opt_item = _unique_col(df_by_kategori, "DESC")
+        item_selected = [x for x in item_selected if x in set(opt_item)]
+        st.session_state["belanja_item_final2"] = item_selected
+
+        # Kod Item options refer kepada Item.
+        # Jika Item kosong, fallback kepada Kategori supaya options masih wujud.
+        df_for_kod_options = (
+            _filter_df(df_parent, {"DESC": item_selected})
+            if item_selected
+            else df_by_kategori
+        )
+
+        opt_kod = _unique_col(df_for_kod_options, "KOD1")
+        kod_selected = [x for x in kod_selected if x in set(opt_kod)]
+
+        # Jika Item ada selected tetapi Kod Item kosong/stale,
+        # auto pilih semua Kod Item yang berkaitan dengan Item selected.
+        if item_selected and not kod_selected:
+            kod_selected = opt_kod
+
+        st.session_state["belanja_kod_item_final2"] = kod_selected
+
+        st.multiselect(
+            "Pilih Pejabat",
+            full_pejabat,
+            key="belanja_pejabat_final2",
+            on_change=_sync_from_pejabat,
+            placeholder="Pilih Pejabat"
+        )
+
+        st.multiselect(
+            "Pilih PTJ",
+            opt_ptj,
+            key="belanja_ptj_final2",
+            on_change=_sync_from_ptj,
+            placeholder="Pilih PTJ"
+        )
+
+        st.multiselect(
+            "Pilih Kategori",
+            _unique_col(df_parent, "Kategori"),
+            key="belanja_kategori_final2",
+            on_change=_sync_from_kategori,
+            placeholder="Pilih Kategori"
+        )
+
+        st.multiselect(
+            "Pilih Item",
+            opt_item,
+            key="belanja_item_final2",
+            on_change=_sync_from_item,
+            placeholder="Semua Item"
+        )
+
+        st.multiselect(
+            "Pilih Kod Item",
+            opt_kod,
+            key="belanja_kod_item_final2",
+            on_change=_sync_from_kod_item,
+            placeholder="Semua Kod Item"
+        )
+
+        if st.button("♻️ Reset Slicer Belanja & Hasil", key="reset_slicer_belanja_final2"):
+            for key in [
+                "belanja_pejabat_final2",
+                "belanja_ptj_final2",
+                "belanja_kategori_final2",
+                "belanja_item_final2",
+                "belanja_kod_item_final2",
+                "belanja_final2_slicer_initialized",
+                "belanja_pejabat_final",
+                "belanja_ptj_final",
+                "belanja_kategori_final",
+                "belanja_item_final",
+                "belanja_kod_item_final",
+                "belanja_final_slicer_initialized",
+            ]:
+                if key in st.session_state:
+                    del st.session_state[key]
+            st.rerun()
+
+    pilih_ptj = _as_list(st.session_state.get("belanja_pejabat_final2", []))
+    pilih_ptj1 = _as_list(st.session_state.get("belanja_ptj_final2", []))
+    pilih_kategori = _as_list(st.session_state.get("belanja_kategori_final2", []))
+    pilih_desc = _as_list(st.session_state.get("belanja_item_final2", []))
+    pilih_kod1 = _as_list(st.session_state.get("belanja_kod_item_final2", []))
+
+    # Mandatory safety.
+    if not pilih_ptj:
+        pilih_ptj = _unique_col(df_tapis, "PTJ")
+        st.session_state["belanja_pejabat_final2"] = pilih_ptj
+
+    df_tapis = df_tapis[
+        df_tapis["PTJ"].astype(str).isin(pilih_ptj)
+    ].copy()
+
+    opt_ptj_final = _unique_col(df_tapis, "PTJ1")
+    if not pilih_ptj1:
+        pilih_ptj1 = opt_ptj_final
+        st.session_state["belanja_ptj_final2"] = pilih_ptj1
+
+    df_tapis = df_tapis[
+        df_tapis["PTJ1"].astype(str).isin(pilih_ptj1)
+    ].copy()
+
+    opt_kategori_final = _unique_col(df_tapis, "Kategori")
+    if not pilih_kategori:
+        pilih_kategori = opt_kategori_final
+        st.session_state["belanja_kategori_final2"] = pilih_kategori
+
+    df_tapis = df_tapis[
+        df_tapis["Kategori"].astype(str).isin(pilih_kategori)
+    ].copy()
+
+    # Item boleh clear = All Item.
+    if pilih_desc:
+        df_tapis = df_tapis[
+            df_tapis["DESC"].astype(str).isin(pilih_desc)
+        ].copy()
+
+    # Kod Item boleh clear = All Kod Item, dan refer Item.
+    if pilih_kod1:
+        df_tapis = df_tapis[
+            df_tapis["KOD1"].astype(str).isin(pilih_kod1)
+        ].copy()
 
     if df_tapis.empty:
         st.warning("Tiada data selepas tapisan dibuat.")
