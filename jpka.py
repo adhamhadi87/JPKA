@@ -2517,12 +2517,18 @@ elif menu == "2. Geran":
     df_geran_tapis = df_geran_work.copy()
 
     # =======================
-    # SLICER GERAN - PILLS + MULTISELECT CONNECTED STYLE
-    # Sama seperti Belanja & Hasil:
-    # - Pills untuk pilihan cepat.
-    # - Multiselect untuk clear / pilih semula.
-    # - PTJ, NAMA dan LEGEND saling berkait.
-    # - Jika multiselect dikosongkan, maksudnya All untuk pilihan berkaitan.
+    # SLICER GERAN - STABLE FULL CONNECTION
+    #
+    # Prinsip:
+    # 1. Jika PTJ berubah    -> NAMA & LEGEND auto isi ikut PTJ.
+    # 2. Jika NAMA berubah   -> PTJ & LEGEND auto isi ikut NAMA.
+    # 3. Jika LEGEND berubah -> PTJ & NAMA auto isi ikut LEGEND.
+    # 4. Pills hanya tunjuk item yang belum berada dalam multiselect.
+    # 5. Jika item dikeluarkan dari multiselect, item itu muncul semula dalam pills.
+    #
+    # Nota penting:
+    # - Logic ini tidak guna "options bertapis terlalu ketat" untuk pills,
+    #   supaya item yang dikeluarkan sentiasa boleh muncul semula.
     # =======================
     def _geran_as_list(value):
         if value is None:
@@ -2545,7 +2551,50 @@ elif menu == "2. Geran":
         return df_temp
 
     def _geran_base_df():
-        return st.session_state.get("_geran_slicer_base_df_final", pd.DataFrame())
+        return st.session_state.get("_geran_slicer_base_df_stable", pd.DataFrame())
+
+    def _geran_force_pills_key(col_name):
+        return f"_geran_force_pills_{col_name}"
+
+    def _geran_prev_key(col_name):
+        return f"_geran_prev_{col_name}"
+
+    def _geran_track_removed(col_name, current_vals):
+        """
+        Simpan item yang dikeluarkan dari multiselect supaya ia muncul semula dalam pills.
+        """
+        prev_vals = set(_geran_as_list(st.session_state.get(_geran_prev_key(col_name), [])))
+        curr_vals = set(_geran_as_list(current_vals))
+        removed = sorted(list(prev_vals - curr_vals))
+
+        if removed:
+            forced_key = _geran_force_pills_key(col_name)
+            forced_existing = set(_geran_as_list(st.session_state.get(forced_key, [])))
+            st.session_state[forced_key] = sorted(list(forced_existing.union(removed)))
+
+    def _geran_build_pills_options(all_options, selected_vals, col_name):
+        selected_set = set(_geran_as_list(selected_vals))
+        forced_key = _geran_force_pills_key(col_name)
+        forced_vals = [
+            x for x in _geran_as_list(st.session_state.get(forced_key, []))
+            if x in set(all_options) and x not in selected_set
+        ]
+
+        base_vals = [
+            x for x in all_options
+            if x not in selected_set
+        ]
+
+        return unique_sorted(pd.Series(list(dict.fromkeys(base_vals + forced_vals))))
+
+    def _geran_remove_from_forced(col_name, vals):
+        forced_key = _geran_force_pills_key(col_name)
+        vals_set = set(_geran_as_list(vals))
+        forced_vals = [
+            x for x in _geran_as_list(st.session_state.get(forced_key, []))
+            if x not in vals_set
+        ]
+        st.session_state[forced_key] = forced_vals
 
     def _sync_geran_from_ptj():
         df_base = _geran_base_df()
@@ -2553,133 +2602,105 @@ elif menu == "2. Geran":
             return
 
         ptj_vals = _geran_as_list(st.session_state.get("geran_ptj_final", []))
+        _geran_track_removed("ptj", ptj_vals)
 
-        # PTJ clear = All PTJ
-        if ptj_vals:
-            df_related = _geran_filter_df(df_base, {ptj_col: ptj_vals})
-        else:
-            df_related = df_base.copy()
+        df_ctx = (
+            _geran_filter_df(df_base, {ptj_col: ptj_vals})
+            if ptj_vals else df_base.copy()
+        )
 
-        nama_current = _geran_as_list(st.session_state.get("geran_nama_final", []))
-        legend_current = _geran_as_list(st.session_state.get("geran_legend_final", []))
-
-        nama_valid = _geran_unique_col(df_related, nama_col)
-        legend_valid = _geran_unique_col(df_related, legend_col)
-
-        st.session_state["geran_nama_final"] = [
-            x for x in nama_current if x in set(nama_valid)
-        ]
-
-        st.session_state["geran_legend_final"] = [
-            x for x in legend_current if x in set(legend_valid)
-        ]
+        st.session_state["geran_nama_final"] = _geran_unique_col(df_ctx, nama_col)
+        st.session_state["geran_legend_final"] = _geran_unique_col(df_ctx, legend_col)
 
     def _sync_geran_from_nama():
         df_base = _geran_base_df()
         if df_base.empty:
             return
 
-        ptj_vals = _geran_as_list(st.session_state.get("geran_ptj_final", []))
         nama_vals = _geran_as_list(st.session_state.get("geran_nama_final", []))
+        _geran_track_removed("nama", nama_vals)
 
-        filters = {}
-        if ptj_vals:
-            filters[ptj_col] = ptj_vals
-        if nama_vals:
-            filters[nama_col] = nama_vals
+        df_ctx = (
+            _geran_filter_df(df_base, {nama_col: nama_vals})
+            if nama_vals else df_base.copy()
+        )
 
-        df_related = _geran_filter_df(df_base, filters)
-        if df_related.empty:
-            df_related = _geran_filter_df(df_base, {ptj_col: ptj_vals}) if ptj_vals else df_base.copy()
-
-        legend_current = _geran_as_list(st.session_state.get("geran_legend_final", []))
-        legend_valid = _geran_unique_col(df_related, legend_col)
-
-        st.session_state["geran_legend_final"] = [
-            x for x in legend_current if x in set(legend_valid)
-        ]
+        st.session_state["geran_ptj_final"] = _geran_unique_col(df_ctx, ptj_col)
+        st.session_state["geran_legend_final"] = _geran_unique_col(df_ctx, legend_col)
 
     def _sync_geran_from_legend():
-        # LEGEND clear = All LEGEND dalam konteks PTJ/NAMA semasa.
         df_base = _geran_base_df()
         if df_base.empty:
             return
 
-        ptj_vals = _geran_as_list(st.session_state.get("geran_ptj_final", []))
-        nama_vals = _geran_as_list(st.session_state.get("geran_nama_final", []))
         legend_vals = _geran_as_list(st.session_state.get("geran_legend_final", []))
+        _geran_track_removed("legend", legend_vals)
 
-        filters = {}
-        if ptj_vals:
-            filters[ptj_col] = ptj_vals
-        if nama_vals:
-            filters[nama_col] = nama_vals
-        if legend_vals:
-            filters[legend_col] = legend_vals
+        df_ctx = (
+            _geran_filter_df(df_base, {legend_col: legend_vals})
+            if legend_vals else df_base.copy()
+        )
 
-        df_related = _geran_filter_df(df_base, filters)
-        if df_related.empty:
-            return
+        st.session_state["geran_ptj_final"] = _geran_unique_col(df_ctx, ptj_col)
+        st.session_state["geran_nama_final"] = _geran_unique_col(df_ctx, nama_col)
 
     with st.sidebar:
         st.markdown("### 🔎  GERAN")
 
         df_geran_slicer_base = df_geran_tapis.copy()
-        st.session_state["_geran_slicer_base_df_final"] = df_geran_slicer_base
+        st.session_state["_geran_slicer_base_df_stable"] = df_geran_slicer_base
 
         full_geran_ptj = _geran_unique_col(df_geran_slicer_base, ptj_col)
         full_geran_nama = _geran_unique_col(df_geran_slicer_base, nama_col)
         full_geran_legend = _geran_unique_col(df_geran_slicer_base, legend_col)
 
-        if "geran_final_slicer_initialized" not in st.session_state:
+        if "geran_stable_slicer_initialized" not in st.session_state:
             st.session_state["geran_ptj_final"] = full_geran_ptj
             st.session_state["geran_nama_final"] = full_geran_nama
             st.session_state["geran_legend_final"] = full_geran_legend
-            st.session_state["geran_final_slicer_initialized"] = True
+            st.session_state["_geran_prev_ptj"] = full_geran_ptj
+            st.session_state["_geran_prev_nama"] = full_geran_nama
+            st.session_state["_geran_prev_legend"] = full_geran_legend
+            st.session_state["_geran_force_pills_ptj"] = []
+            st.session_state["_geran_force_pills_nama"] = []
+            st.session_state["_geran_force_pills_legend"] = []
+            st.session_state["geran_stable_slicer_initialized"] = True
 
-        # Clean invalid values selepas data berubah.
-        valid_geran_map = {
-            "geran_ptj_final": full_geran_ptj,
-            "geran_nama_final": full_geran_nama,
-            "geran_legend_final": full_geran_legend,
-        }
+        # Bersihkan selected value yang sudah tiada dalam data.
+        st.session_state["geran_ptj_final"] = [
+            x for x in _geran_as_list(st.session_state.get("geran_ptj_final", []))
+            if x in set(full_geran_ptj)
+        ]
+        st.session_state["geran_nama_final"] = [
+            x for x in _geran_as_list(st.session_state.get("geran_nama_final", []))
+            if x in set(full_geran_nama)
+        ]
+        st.session_state["geran_legend_final"] = [
+            x for x in _geran_as_list(st.session_state.get("geran_legend_final", []))
+            if x in set(full_geran_legend)
+        ]
 
-        for key_v, options_v in valid_geran_map.items():
-            current_v = _geran_as_list(st.session_state.get(key_v, []))
-            st.session_state[key_v] = [x for x in current_v if x in set(options_v)]
-
-        ptj_selected = _geran_as_list(st.session_state.get("geran_ptj_final", []))
-        df_for_nama = (
-            _geran_filter_df(df_geran_slicer_base, {ptj_col: ptj_selected})
-            if ptj_selected else df_geran_slicer_base.copy()
+        # PTJ pills
+        opt_ptj_pills = _geran_build_pills_options(
+            full_geran_ptj,
+            st.session_state.get("geran_ptj_final", []),
+            "ptj"
         )
-        opt_nama = _geran_unique_col(df_for_nama, nama_col)
 
-        nama_selected = _geran_as_list(st.session_state.get("geran_nama_final", []))
-        nama_selected = [x for x in nama_selected if x in set(opt_nama)]
-        st.session_state["geran_nama_final"] = nama_selected
-
-        df_for_legend = _geran_filter_df(
-            df_for_nama,
-            {nama_col: nama_selected}
-        ) if nama_selected else df_for_nama.copy()
-
-        opt_legend = _geran_unique_col(df_for_legend, legend_col)
-
-        legend_selected = _geran_as_list(st.session_state.get("geran_legend_final", []))
-        legend_selected = [x for x in legend_selected if x in set(opt_legend)]
-        st.session_state["geran_legend_final"] = legend_selected
-
-        # PTJ Pills + Multiselect
         def _sync_geran_ptj_pills():
             ptj_pills = _geran_as_list(st.session_state.get("geran_ptj_pills_multi", []))
-            if ptj_pills:
-                st.session_state["geran_ptj_final"] = ptj_pills
-                _sync_geran_from_ptj()
+            if not ptj_pills:
+                return
+
+            current_ptj = _geran_as_list(st.session_state.get("geran_ptj_final", []))
+            st.session_state["geran_ptj_final"] = sorted(list(set(current_ptj + ptj_pills)))
+            st.session_state["geran_ptj_pills_multi"] = []
+            _geran_remove_from_forced("ptj", ptj_pills)
+            _sync_geran_from_ptj()
 
         st.pills(
             "⚡ Pilih PTJ",
-            options=full_geran_ptj,
+            options=opt_ptj_pills,
             selection_mode="multi",
             key="geran_ptj_pills_multi",
             on_change=_sync_geran_ptj_pills
@@ -2693,16 +2714,27 @@ elif menu == "2. Geran":
             placeholder="Semua PTJ"
         )
 
-        # NAMA Pills + Multiselect
+        # NAMA pills
+        opt_nama_pills = _geran_build_pills_options(
+            full_geran_nama,
+            st.session_state.get("geran_nama_final", []),
+            "nama"
+        )
+
         def _sync_geran_nama_pills():
             nama_pills = _geran_as_list(st.session_state.get("geran_nama_pills_multi", []))
-            if nama_pills:
-                st.session_state["geran_nama_final"] = nama_pills
-                _sync_geran_from_nama()
+            if not nama_pills:
+                return
+
+            current_nama = _geran_as_list(st.session_state.get("geran_nama_final", []))
+            st.session_state["geran_nama_final"] = sorted(list(set(current_nama + nama_pills)))
+            st.session_state["geran_nama_pills_multi"] = []
+            _geran_remove_from_forced("nama", nama_pills)
+            _sync_geran_from_nama()
 
         st.pills(
             "⚡ Pilih NAMA",
-            options=opt_nama,
+            options=opt_nama_pills,
             selection_mode="multi",
             key="geran_nama_pills_multi",
             on_change=_sync_geran_nama_pills
@@ -2710,22 +2742,33 @@ elif menu == "2. Geran":
 
         st.multiselect(
             "Pilih NAMA (Multi Select)",
-            opt_nama,
+            full_geran_nama,
             key="geran_nama_final",
             on_change=_sync_geran_from_nama,
             placeholder="Semua NAMA"
         )
 
-        # LEGEND Pills + Multiselect
+        # LEGEND pills
+        opt_legend_pills = _geran_build_pills_options(
+            full_geran_legend,
+            st.session_state.get("geran_legend_final", []),
+            "legend"
+        )
+
         def _sync_geran_legend_pills():
             legend_pills = _geran_as_list(st.session_state.get("geran_legend_pills_multi", []))
-            if legend_pills:
-                st.session_state["geran_legend_final"] = legend_pills
-                _sync_geran_from_legend()
+            if not legend_pills:
+                return
+
+            current_legend = _geran_as_list(st.session_state.get("geran_legend_final", []))
+            st.session_state["geran_legend_final"] = sorted(list(set(current_legend + legend_pills)))
+            st.session_state["geran_legend_pills_multi"] = []
+            _geran_remove_from_forced("legend", legend_pills)
+            _sync_geran_from_legend()
 
         st.pills(
             "⚡ Pilih LEGEND",
-            options=opt_legend,
+            options=opt_legend_pills,
             selection_mode="multi",
             key="geran_legend_pills_multi",
             on_change=_sync_geran_legend_pills
@@ -2733,13 +2776,13 @@ elif menu == "2. Geran":
 
         st.multiselect(
             "Pilih LEGEND (Multi Select)",
-            opt_legend,
+            full_geran_legend,
             key="geran_legend_final",
             on_change=_sync_geran_from_legend,
             placeholder="Semua LEGEND"
         )
 
-        if st.button("♻️ Reset Slicer Geran", key="reset_slicer_geran_final"):
+        if st.button("♻️ Reset Slicer Geran", key="reset_slicer_geran_stable"):
             for key in [
                 "geran_ptj_final",
                 "geran_nama_final",
@@ -2747,26 +2790,30 @@ elif menu == "2. Geran":
                 "geran_ptj_pills_multi",
                 "geran_nama_pills_multi",
                 "geran_legend_pills_multi",
-                "geran_final_slicer_initialized",
-                "_geran_slicer_base_df_final",
-                "geran_pills_ptj",
-                "geran_pills_nama",
-                "geran_pills_legend",
-                "geran_pills_initialized",
-                "_geran_slicer_base_df_pills",
-                "geran_slicer_ptj",
-                "geran_slicer_nama",
-                "geran_slicer_legend",
+                "geran_stable_slicer_initialized",
+                "_geran_slicer_base_df_stable",
+                "_geran_prev_ptj",
+                "_geran_prev_nama",
+                "_geran_prev_legend",
+                "_geran_force_pills_ptj",
+                "_geran_force_pills_nama",
+                "_geran_force_pills_legend",
+                "geran_full_slicer_initialized",
+                "_geran_slicer_base_df_full",
             ]:
                 if key in st.session_state:
                     del st.session_state[key]
             st.rerun()
 
+        # Simpan state terkini sebagai previous untuk detect remove pada rerun seterusnya.
+        st.session_state["_geran_prev_ptj"] = _geran_as_list(st.session_state.get("geran_ptj_final", []))
+        st.session_state["_geran_prev_nama"] = _geran_as_list(st.session_state.get("geran_nama_final", []))
+        st.session_state["_geran_prev_legend"] = _geran_as_list(st.session_state.get("geran_legend_final", []))
+
     pilih_ptj_geran = _geran_as_list(st.session_state.get("geran_ptj_final", []))
     pilih_nama = _geran_as_list(st.session_state.get("geran_nama_final", []))
     pilih_legend = _geran_as_list(st.session_state.get("geran_legend_final", []))
 
-    # Multiselect kosong = All.
     if pilih_ptj_geran:
         df_geran_tapis = df_geran_tapis[
             df_geran_tapis[ptj_col].astype(str).isin(pilih_ptj_geran)
