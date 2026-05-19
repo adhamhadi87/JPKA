@@ -469,7 +469,8 @@ def rename_summary_columns(df):
         "KOD1": "Kod Item",
         "BAJET 2025": "Bajet",
         "SASARAN Q1-25": "Bajet Qtr",
-        "SEBENAR Q1-25": "Sebenar"
+        "SEBENAR Q1-25": "Sebenar 03-2026",
+        "SEBENAR 03-2025": "Sebenar 03-2025"
     })
 
 
@@ -676,14 +677,17 @@ def detect_amount_column(df):
 
 # =======================
 # LOAD DATA BELANJA & HASIL
-# Nota: tidak guna cache supaya perubahan Excel terus dibaca semula.
+# Nota:
+# - Belanja & Hasil kini guna SATU fail Excel sahaja:
+#   JPKA_ANALISA PK CIDB 03-2026.xlsx
+# - Comparison Carta 2 menggunakan column dalam fail yang sama:
+#   SEBENAR 03-2025
 # =======================
 def load_data():
     df_dict = {}
     errors = []
 
     files = {
-        "03-2025": "JPKA_ANALISA PK CIDB 03-2025.xlsx",
         "03-2026": "JPKA_ANALISA PK CIDB 03-2026.xlsx"
     }
 
@@ -696,21 +700,51 @@ def load_data():
                 df = df.rename(columns={"KOD": "KOD1"})
 
             # Standardize nama column untuk dashboard.
-            # Untuk fail 2026, column seperti BAJET 2026 / SASARAN Q1-26 / SEBENAR Q1-26
-            # akan ditukar kepada nama standard yang digunakan oleh dashboard.
+            # Nama dalaman lama dikekalkan supaya chart/slicer sedia ada masih jalan:
+            # BAJET 2025       = Bajet tahunan 2026
+            # SASARAN Q1-25    = Bajet/Sasaran 03-2026
+            # SEBENAR Q1-25    = Sebenar 03-2026
             rename_map = {
                 "BAJET 2026": "BAJET 2025",
+                "Bajet 2026": "BAJET 2025",
+                "BAJET2026": "BAJET 2025",
+
                 "SASARAN Q1-26": "SASARAN Q1-25",
-                "SEBENAR Q1-26": "SEBENAR Q1-25"
+                "SASARAN 03-2026": "SASARAN Q1-25",
+                "BAJET 03-2026": "SASARAN Q1-25",
+                "BAJET QTR": "SASARAN Q1-25",
+
+                "SEBENAR Q1-26": "SEBENAR Q1-25",
+                "SEBENAR 03-2026": "SEBENAR Q1-25",
+
+                "SEBENAR Q1-25": "SEBENAR 03-2025",
+                "SEBENAR 03-2025": "SEBENAR 03-2025"
             }
 
-            df = df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns and v not in df.columns})
+            # Rename hanya jika target belum wujud supaya column tidak tertimpa.
+            safe_rename = {}
+            for old_col, new_col in rename_map.items():
+                if old_col in df.columns:
+                    if old_col == new_col or new_col not in df.columns:
+                        safe_rename[old_col] = new_col
+
+            df = df.rename(columns=safe_rename)
+
+            # Fallback jika column comparison belum ada.
+            # Untuk file baru, column ini sepatutnya memang wujud.
+            if "SEBENAR 03-2025" not in df.columns:
+                df["SEBENAR 03-2025"] = 0
 
             df["Sumber"] = q
             df["Quarter"] = q
             df["Tahun"] = int(q.split("-")[1])
 
-            numeric_cols = ["BAJET 2025", "SASARAN Q1-25", "SEBENAR Q1-25"]
+            numeric_cols = [
+                "BAJET 2025",
+                "SASARAN Q1-25",
+                "SEBENAR Q1-25",
+                "SEBENAR 03-2025"
+            ]
             df = pastikan_numeric(df, numeric_cols)
 
             df_dict[q] = df
@@ -744,52 +778,62 @@ df_dict, belanja_errors = load_data()
 df_geran, geran_error = load_data_geran()
 
 # =======================
-# SIDEBAR MENU UTAMA
+# MENU UTAMA DI MAIN PAGE
 # =======================
-st.sidebar.markdown(
-    dedent("""
-    <div style="
-        text-align:center;
-        padding:20px 14px;
-        border-radius:22px;
-        background:rgba(255,255,255,0.12);
-        border:1px solid rgba(255,255,255,0.18);
-        margin-bottom:18px;
-        box-shadow:0 14px 30px rgba(0,0,0,0.22);
-        backdrop-filter:blur(16px);
-        -webkit-backdrop-filter:blur(16px);
-    ">
-        <div style="font-size:34px; line-height:1;">📊</div>
-        <h2 style="margin:10px 0 4px 0; color:#ffffff; font-size:21px;">
-            PRESTASI KEWANGAN CIDB
-        </h2>
-        <p style="margin:0; color:#dbeafe; font-size:12px;">
-        </p>
-    </div>
-    """).strip(),
-    unsafe_allow_html=True
-)
+html("""
+<div style="
+    text-align:center;
+    padding:18px 18px 10px 18px;
+    border-radius:24px;
+    background:rgba(255,255,255,0.55);
+    border:1px solid rgba(255,255,255,0.72);
+    margin-bottom:12px;
+    box-shadow:0 14px 34px rgba(15,23,42,0.10);
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
+">
+    <div style="font-size:38px; line-height:1;">📊</div>
+    <h1 style="margin:8px 0 2px 0; font-weight:800; font-size:30px; color:#1e293b;">
+        PRESTASI KEWANGAN CIDB
+    </h1>
+    <p style="margin:0; color:#64748b; font-size:13px;">
+        Dashboard Prestasi Kewangan
+    </p>
+</div>
+""")
 
-menu = st.sidebar.radio(
+menu_label = st.pills(
     "Pilih Modul",
-    options=["1. Belanja & Hasil", "2. Geran", "3. P&L", "4. Balance Sheet", "5. Cash Flow"],
+    options=["Belanja & Hasil", "Geran", "P&L", "Balance Sheet", "Cash Flow"],
+    default="Belanja & Hasil",
     label_visibility="collapsed"
 )
+
+menu_map = {
+    "Belanja & Hasil": "1. Belanja & Hasil",
+    "Geran": "2. Geran",
+    "P&L": "3. P&L",
+    "Balance Sheet": "4. Balance Sheet",
+    "Cash Flow": "5. Cash Flow",
+}
+
+menu = menu_map.get(menu_label, "1. Belanja & Hasil")
 
 tajuk_utama = {
     "1. Belanja & Hasil": "📊 PRESTASI PERBELANJAAN DAN HASIL CIDB",
     "2. Geran": "📊 PRESTASI GERAN",
-    "3. P&L": "📊 Profit & Lost",
-    "4. Balance Sheet": "📊Balance Sheet",
+    "3. P&L": "📊 Profit & Loss",
+    "4. Balance Sheet": "📊 Balance Sheet",
     "5. Cash Flow": "📊 Cash Flow",
 }
 
 html(f"""
-<h1 style="text-align:center; font-weight:bold; font-size:28px; color:#2c3e50;">
+<h2 style="text-align:center; font-weight:700; font-size:22px; color:#334155; margin-top:8px; margin-bottom:16px;">
     {tajuk_utama.get(menu, "📊 PRESTASI KEWANGAN CIDB")}
-</h1>
+</h2>
 """)
 
+st.sidebar.markdown("### 🔎 Slicer / Filter")
 st.sidebar.markdown("---")
 if st.sidebar.button("🔄 Refresh Data Excel"):
     st.rerun()
@@ -808,15 +852,18 @@ if menu == "1. Belanja & Hasil":
                     st.write(f"- {err}")
         st.stop()
 
-    quarters_available = [q for q in ["03-2025", "03-2026"] if q in df_dict]
+    quarters_available = [q for q in ["03-2026"] if q in df_dict]
 
     with st.sidebar:
         st.markdown("### 🔎 PILIHAN ")
-        default_quarter = ["03-2026"] if "03-2026" in quarters_available else (["12-2025"] if "12-2025" in quarters_available else quarters_available[:1])
-        pilih_quarter = st.multiselect("Pilih Tempoh", quarters_available, default=default_quarter)
+
+    # Tempoh global tidak dipaparkan sebagai slicer.
+    # Dashboard utama auto guna tempoh terkini.
+    # Carta 2 masih ada filter comparison tempoh sendiri.
+    pilih_quarter = ["03-2026"] if "03-2026" in quarters_available else quarters_available[-1:]
 
     if not pilih_quarter:
-        st.warning("Sila pilih sekurang-kurangnya satu Quarter.")
+        st.warning("Tiada tempoh data tersedia.")
         st.stop()
 
     dfs = [df_dict[q] for q in pilih_quarter if q in df_dict]
@@ -829,7 +876,7 @@ if menu == "1. Belanja & Hasil":
 
     required_cols = [
         "PTJ", "PTJ1", "Kategori", "DESC", "KOD1",
-        "BAJET 2025", "SASARAN Q1-25", "SEBENAR Q1-25", "Quarter"
+        "BAJET 2025", "SASARAN Q1-25", "SEBENAR Q1-25", "SEBENAR 03-2025", "Quarter"
     ]
     missing_cols = [col for col in required_cols if col not in df_tapis.columns]
     if missing_cols:
@@ -881,6 +928,37 @@ if menu == "1. Belanja & Hasil":
         st.session_state["belanja_item_final2"] = _unique_col(df_related, "DESC")
         st.session_state["belanja_kod_item_final2"] = _unique_col(df_related, "KOD1")
 
+    def _set_child_slicers_preserve_kategori(df_related):
+        """
+        Auto-sync slicer anak tanpa reset pilihan Kategori user.
+        Contoh: jika Kategori = Hasil, ubah/clear PTJ tidak akan tukar balik
+        kepada semua kategori selagi Hasil masih wujud dalam konteks data baharu.
+        """
+        if df_related.empty:
+            return
+
+        kategori_current = _as_list(st.session_state.get("belanja_kategori_final2", []))
+        kategori_valid = _unique_col(df_related, "Kategori")
+
+        kategori_keep = [x for x in kategori_current if x in set(kategori_valid)]
+
+        if kategori_current and kategori_keep:
+            kategori_vals = kategori_keep
+            df_kategori = _filter_df(df_related, {"Kategori": kategori_vals})
+        else:
+            kategori_vals = kategori_valid
+            df_kategori = df_related.copy()
+
+        if df_kategori.empty:
+            df_kategori = df_related.copy()
+            kategori_vals = _unique_col(df_kategori, "Kategori")
+
+        st.session_state["belanja_pejabat_final2"] = _unique_col(df_kategori, "PTJ")
+        st.session_state["belanja_ptj_final2"] = _unique_col(df_kategori, "PTJ1")
+        st.session_state["belanja_kategori_final2"] = kategori_vals
+        st.session_state["belanja_item_final2"] = _unique_col(df_kategori, "DESC")
+        st.session_state["belanja_kod_item_final2"] = _unique_col(df_kategori, "KOD1")
+
     def _base_df():
         return st.session_state.get("_belanja_slicer_base_df_v2", pd.DataFrame())
 
@@ -898,7 +976,7 @@ if menu == "1. Belanja & Hasil":
         if df_related.empty:
             df_related = df_base.copy()
 
-        _set_all_from_df(df_related)
+        _set_child_slicers_preserve_kategori(df_related)
 
     def _sync_from_ptj():
         df_base = _base_df()
@@ -924,7 +1002,7 @@ if menu == "1. Belanja & Hasil":
         if df_related.empty:
             df_related = df_by_pejabat.copy()
 
-        _set_all_from_df(df_related)
+        _set_child_slicers_preserve_kategori(df_related)
 
     def _sync_from_kategori():
         df_base = _base_df()
@@ -1124,22 +1202,8 @@ if menu == "1. Belanja & Hasil":
 
         st.session_state["belanja_kod_item_final2"] = kod_selected
 
-        st.multiselect(
-            "Pilih Pejabat",
-            full_pejabat,
-            key="belanja_pejabat_final2",
-            on_change=_sync_from_pejabat,
-            placeholder="Pilih Pejabat"
-        )
-
-        st.multiselect(
-            "Pilih PTJ",
-            opt_ptj,
-            key="belanja_ptj_final2",
-            on_change=_sync_from_ptj,
-            placeholder="Pilih PTJ"
-        )
-
+        # Susunan slicer:
+        # Kategori -> Pejabat -> PTJ -> Item -> Kod Item
         st.multiselect(
             "Pilih Kategori",
             _unique_col(df_parent, "Kategori"),
@@ -1149,15 +1213,146 @@ if menu == "1. Belanja & Hasil":
         )
 
         st.multiselect(
-            "Pilih Item",
+            "Pilih Pejabat",
+            full_pejabat,
+            key="belanja_pejabat_final2",
+            on_change=_sync_from_pejabat,
+            placeholder="Pilih Pejabat"
+        )
+
+        # PTJ Pills - boleh pilih banyak PTJ tanpa Ctrl.
+        def _sync_from_ptj_pills():
+            ptj_pills = _as_list(st.session_state.get("ptj_pills_multi_final2", []))
+
+            if not ptj_pills:
+                return
+
+            df_base_pills = _base_df()
+
+            pejabat_vals = _as_list(st.session_state.get("belanja_pejabat_final2", []))
+            if not pejabat_vals:
+                pejabat_vals = _unique_col(df_base_pills, "PTJ")
+
+            df_ptj_pills = _filter_df(
+                df_base_pills,
+                {
+                    "PTJ": pejabat_vals,
+                    "PTJ1": ptj_pills
+                }
+            )
+
+            if df_ptj_pills.empty:
+                return
+
+            # Preserve Kategori semasa jika masih valid dalam PTJ yang dipilih.
+            st.session_state["belanja_ptj_final2"] = ptj_pills
+            _set_child_slicers_preserve_kategori(df_ptj_pills)
+            st.session_state["belanja_ptj_final2"] = [
+                x for x in ptj_pills
+                if x in set(_unique_col(df_ptj_pills, "PTJ1"))
+            ]
+
+        st.pills(
+            "⚡ Pilih PTJ",
+            options=opt_ptj,
+            selection_mode="multi",
+            key="ptj_pills_multi_final2",
+            on_change=_sync_from_ptj_pills
+        )
+
+        st.multiselect(
+            "Pilih PTJ (Multi Select)",
+            opt_ptj,
+            key="belanja_ptj_final2",
+            on_change=_sync_from_ptj,
+            placeholder="Pilih PTJ"
+        )
+
+        # Item Pills - boleh pilih banyak item tanpa Ctrl.
+        def _sync_from_item_pills():
+            item_pills = _as_list(st.session_state.get("item_pills_multi_final2", []))
+
+            if not item_pills:
+                return
+
+            df_base_pills = _base_df()
+
+            kategori_pills = _as_list(st.session_state.get("belanja_kategori_final2", []))
+            if not kategori_pills:
+                kategori_pills = _unique_col(df_base_pills, "Kategori")
+
+            df_item_pills = _filter_df(
+                df_base_pills,
+                {
+                    "Kategori": kategori_pills,
+                    "DESC": item_pills
+                }
+            )
+
+            if df_item_pills.empty:
+                return
+
+            st.session_state["belanja_item_final2"] = item_pills
+            st.session_state["belanja_kod_item_final2"] = _unique_col(df_item_pills, "KOD1")
+            st.session_state["belanja_pejabat_final2"] = _unique_col(df_item_pills, "PTJ")
+            st.session_state["belanja_ptj_final2"] = _unique_col(df_item_pills, "PTJ1")
+            st.session_state["belanja_kategori_final2"] = _unique_col(df_item_pills, "Kategori")
+
+        st.pills(
+            "⚡ Pilih Item",
+            options=opt_item,
+            selection_mode="multi",
+            key="item_pills_multi_final2",
+            on_change=_sync_from_item_pills
+        )
+
+        st.multiselect(
+            "Pilih Item (Multi Select)",
             opt_item,
             key="belanja_item_final2",
             on_change=_sync_from_item,
             placeholder="Semua Item"
         )
 
+        # Kod Item Pills - boleh pilih banyak kod tanpa Ctrl.
+        def _sync_from_kod_pills():
+            kod_pills = _as_list(st.session_state.get("kod_pills_multi_final2", []))
+
+            if not kod_pills:
+                return
+
+            df_base_pills = _base_df()
+
+            item_vals = _as_list(st.session_state.get("belanja_item_final2", []))
+            kategori_vals = _as_list(st.session_state.get("belanja_kategori_final2", []))
+
+            filters = {"KOD1": kod_pills}
+            if item_vals:
+                filters["DESC"] = item_vals
+            elif kategori_vals:
+                filters["Kategori"] = kategori_vals
+
+            df_kod_pills = _filter_df(df_base_pills, filters)
+
+            if df_kod_pills.empty:
+                return
+
+            st.session_state["belanja_kod_item_final2"] = kod_pills
+            st.session_state["belanja_item_final2"] = _unique_col(df_kod_pills, "DESC")
+            st.session_state["belanja_pejabat_final2"] = _unique_col(df_kod_pills, "PTJ")
+            st.session_state["belanja_ptj_final2"] = _unique_col(df_kod_pills, "PTJ1")
+            st.session_state["belanja_kategori_final2"] = _unique_col(df_kod_pills, "Kategori")
+
+        st.pills(
+            "⚡ Pilih Kod Item",
+            options=opt_kod,
+            selection_mode="multi",
+            key="kod_pills_multi_final2",
+            on_change=_sync_from_kod_pills
+        )
+
         st.multiselect(
-            "Pilih Kod Item",
+            "Pilih Kod Item (Multi Select)",
             opt_kod,
             key="belanja_kod_item_final2",
             on_change=_sync_from_kod_item,
@@ -1171,6 +1366,9 @@ if menu == "1. Belanja & Hasil":
                 "belanja_kategori_final2",
                 "belanja_item_final2",
                 "belanja_kod_item_final2",
+                "ptj_pills_multi_final2",
+                "item_pills_multi_final2",
+                "kod_pills_multi_final2",
                 "belanja_final2_slicer_initialized",
                 "belanja_pejabat_final",
                 "belanja_ptj_final",
@@ -1486,315 +1684,132 @@ if menu == "1. Belanja & Hasil":
             apply_chart_text_style(fig1, size=12, angle=0)
             st.plotly_chart(fig1, use_container_width=True)
 
-    with st.expander("📊 CARTA 2: JUMLAH SEBENAR VS TEMPOH", expanded=False):
-        df_total = df_akhir.groupby("Quarter", as_index=False)["SEBENAR Q1-25"].sum()
-        df_total = df_total.sort_values("Quarter").reset_index(drop=True)
-
+    with st.expander("📊 CARTA 2: PERBANDINGAN SEBENAR 03-2026 VS 03-2025", expanded=False):
         # =======================
-        # PILIH TEMPOH SEBELUM SAHAJA
-        # Tempoh semasa ikut tempoh dipilih di sidebar.
-        # Jika 03-2026 ada dalam pilihan, guna 03-2026 sebagai semasa.
-        # Jika tiada, guna tempoh terkini dalam pilihan sidebar.
+        # CARTA 2 - COMPARISON DALAM SATU FAIL EXCEL
+        # Fail: JPKA_ANALISA PK CIDB 03-2026.xlsx
+        # Column semasa : SEBENAR Q1-25 / SEBENAR 03-2026
+        # Column sebelum: SEBENAR 03-2025
         # =======================
-        # Tempoh semasa ikut pilihan sidebar.
-        # Jika sidebar pilih satu tempoh sahaja, tempoh sebelum tetap boleh pilih
-        # daripada semua file Excel yang berjaya dibaca.
-        semua_quarter_available = [
-            q for q in ["03-2025", "03-2026"]
-            if q in df_dict
-        ]
+        df_compare = df_akhir.copy()
 
-        quarter_semasa = (
-            "03-2026"
-            if "03-2026" in pilih_quarter
-            else pilih_quarter[-1]
-        )
-
-        pilihan_sebelum = [
-            q for q in semua_quarter_available
-            if q != quarter_semasa
-        ]
-
-        default_sebelum_multi = [
-            q for q in ["03-2025"]
-            if q in pilihan_sebelum
-        ]
-
-        quarter_sebelum = st.multiselect(
-            "Pilih Tempoh Sebelum",
-            pilihan_sebelum,
-            default=default_sebelum_multi,
-            key="compare_sebelum_multi"
-        )
-
-        # =======================
-        # DATA KHAS CARTA 2 SAHAJA
-        # Jika sidebar pilih 1 tempoh sahaja, Carta 2 tetap paparkan
-        # tempoh semasa + semua tempoh sebelum yang dipilih.
-        # Ini tidak effect carta/summary lain.
-        # =======================
-        carta2_quarters = []
-        if quarter_semasa in df_dict:
-            carta2_quarters.append(quarter_semasa)
-
-        for q_before in quarter_sebelum:
-            if q_before in df_dict and q_before not in carta2_quarters:
-                carta2_quarters.append(q_before)
-
-        df_carta2_list = []
-
-        for q_carta2 in carta2_quarters:
-            df_q_carta2 = df_dict[q_carta2].copy()
-
-            # Apply filter sidebar semasa supaya comparison adil.
-            try:
-                if "pilih_ptj" in locals() and "PTJ" in df_q_carta2.columns:
-                    df_q_carta2 = df_q_carta2[df_q_carta2["PTJ"].astype(str).isin(pilih_ptj)]
-
-                if "pilih_ptj1" in locals() and "PTJ1" in df_q_carta2.columns:
-                    df_q_carta2 = df_q_carta2[df_q_carta2["PTJ1"].astype(str).isin(pilih_ptj1)]
-
-                if "pilih_kategori" in locals() and "Kategori" in df_q_carta2.columns:
-                    df_q_carta2 = df_q_carta2[df_q_carta2["Kategori"].astype(str).isin(pilih_kategori)]
-
-                if "pilih_desc" in locals() and "DESC" in df_q_carta2.columns:
-                    df_q_carta2 = df_q_carta2[df_q_carta2["DESC"].astype(str).isin(pilih_desc)]
-
-                if "pilih_kod1" in locals() and "KOD1" in df_q_carta2.columns:
-                    df_q_carta2 = df_q_carta2[df_q_carta2["KOD1"].astype(str).isin(pilih_kod1)]
-            except Exception:
-                pass
-
-            nilai_q_carta2 = pd.to_numeric(
-                df_q_carta2["SEBENAR Q1-25"],
+        if "SEBENAR 03-2025" not in df_compare.columns:
+            st.warning("Column SEBENAR 03-2025 tidak dijumpai dalam data Excel.")
+        else:
+            nilai_2026 = pd.to_numeric(
+                df_compare["SEBENAR Q1-25"],
                 errors="coerce"
             ).fillna(0).sum()
 
-            df_carta2_list.append({
-                "Quarter": q_carta2,
-                "SEBENAR Q1-25": nilai_q_carta2
+            nilai_2025 = pd.to_numeric(
+                df_compare["SEBENAR 03-2025"],
+                errors="coerce"
+            ).fillna(0).sum()
+
+            df_total_chart = pd.DataFrame({
+                "Tempoh": ["03-2025", "03-2026"],
+                "Jumlah Sebenar": [nilai_2025, nilai_2026]
             })
 
-        df_total_chart = pd.DataFrame(df_carta2_list)
-
-        susunan_quarter_carta2 = ["03-2025", "03-2026"]
-        df_total_chart["Quarter"] = pd.Categorical(
-            df_total_chart["Quarter"],
-            categories=susunan_quarter_carta2,
-            ordered=True
-        )
-        df_total_chart = df_total_chart.sort_values("Quarter").reset_index(drop=True)
-        df_total_chart["Quarter"] = df_total_chart["Quarter"].astype(str)
-
-        fig_total = px.bar(
-            df_total_chart,
-            x="Quarter",
-            y="SEBENAR Q1-25",
-            labels={"SEBENAR Q1-25": "Jumlah Sebenar (RM)", "Quarter": "Tempoh"},
-            text=df_total_chart["SEBENAR Q1-25"].apply(format_nilai)
-        )
-
-        # Carta 2: jika ada banyak bar, jangan guna warna sama.
-        warna_carta2 = [
-            "#2E8B6D", "#E08E4E", "#2C7DA6", "#C44D4D",
-            "#8E7CC3", "#F6C85F", "#6F9EAF", "#7FB069",
-            "#D96C75", "#9A8C98"
-        ]
-
-        fig_total.update_traces(
-            marker_color=[
-                warna_carta2[i % len(warna_carta2)]
-                for i in range(len(df_total_chart))
-            ],
-            text=df_total_chart["SEBENAR Q1-25"].apply(format_nilai)
-        )
-
-        apply_chart_text_style(fig_total, size=12, angle=0)
-
-        # =======================
-        # GAUGE METER PERBANDINGAN SEMASA / SEBELUM
-        # Formula dipersetujui:
-        # ((SEMASA / SEBELUM) * 100) - 100
-        #
-        # Maksud:
-        # 100% = 0% neutral
-        # >100% = positif
-        # <100% = negatif
-        #
-        # Jika pilih banyak Tempoh Sebelum:
-        # - gauge dikira satu-satu untuk setiap tempoh sebelum
-        # - TIDAK guna purata
-        # =======================
-        if len(df_total_chart) >= 2 and quarter_sebelum:
-            row_semasa = df_total_chart[
-                df_total_chart["Quarter"].astype(str) == str(quarter_semasa)
-            ]
-
-            nilai_semasa = pd.to_numeric(
-                row_semasa["SEBENAR Q1-25"].iloc[0] if not row_semasa.empty else 0,
-                errors="coerce"
+            fig_total = px.bar(
+                df_total_chart,
+                x="Tempoh",
+                y="Jumlah Sebenar",
+                labels={
+                    "Jumlah Sebenar": "Jumlah Sebenar (RM)",
+                    "Tempoh": "Tempoh"
+                },
+                text=df_total_chart["Jumlah Sebenar"].apply(format_nilai)
             )
 
+            warna_carta2 = ["#E08E4E", "#2E8B6D"]
+
+            fig_total.update_traces(
+                marker_color=warna_carta2,
+                text=df_total_chart["Jumlah Sebenar"].apply(format_nilai)
+            )
+
+            apply_chart_text_style(fig_total, size=12, angle=0)
+
+            # =======================
+            # NOTA PERBANDINGAN
+            # Formula:
+            # ((SEBENAR 03-2026 / SEBENAR 03-2025) * 100) - 100
+            # =======================
+            if nilai_2025 != 0:
+                peratus_banding = (nilai_2026 / nilai_2025) * 100
+                gauge_delta = peratus_banding - 100
+
+                if gauge_delta > 0:
+                    label_banding = f"+{gauge_delta:.0f}%"
+                    warna_gauge = "#16a34a"
+                    arah_label = "meningkat"
+                elif gauge_delta < 0:
+                    label_banding = f"{gauge_delta:.0f}%"
+                    warna_gauge = "#dc2626"
+                    arah_label = "menurun"
+                else:
+                    label_banding = "0%"
+                    warna_gauge = "#f59e0b"
+                    arah_label = "tiada perubahan"
+            else:
+                label_banding = "#DIV/0!"
+                warna_gauge = "#64748b"
+                arah_label = "tidak dapat dikira"
+
             y_max_chart = max(
-                pd.to_numeric(df_total_chart["SEBENAR Q1-25"], errors="coerce").fillna(0).max(),
+                pd.to_numeric(df_total_chart["Jumlah Sebenar"], errors="coerce").fillna(0).max(),
                 1
             )
 
-            y_tengah = y_max_chart * 0.55
-
-            # Gauge base line
-            fig_total.add_shape(
-                type="line",
-                xref="paper",
-                yref="y",
-                x0=0.30,
-                x1=0.70,
-                y0=y_tengah,
-                y1=y_tengah,
-                line=dict(
-                    color="rgba(100,116,139,0.45)",
-                    width=6
-                )
-            )
-
-            # Center neutral marker
-            fig_total.add_shape(
-                type="line",
-                xref="paper",
-                yref="y",
-                x0=0.50,
-                x1=0.50,
-                y0=y_tengah - (y_max_chart * 0.035),
-                y1=y_tengah + (y_max_chart * 0.035),
-                line=dict(
-                    color="#0f172a",
-                    width=4
-                )
-            )
-
-            # Left / Right symbols
             fig_total.add_annotation(
-                x=0.29,
-                y=y_tengah,
+                x=0.5,
+                y=y_max_chart * 1.14,
                 xref="paper",
                 yref="y",
-                text="-",
-                showarrow=False,
-                font=dict(size=22, color="#dc2626")
-            )
-
-            fig_total.add_annotation(
-                x=0.71,
-                y=y_tengah,
-                xref="paper",
-                yref="y",
-                text="+",
-                showarrow=False,
-                font=dict(size=22, color="#16a34a")
-            )
-
-            # Kira setiap tempoh sebelum satu-satu.
-            compare_labels = []
-
-            for idx_compare, q_before in enumerate(quarter_sebelum):
-                row_before = df_total_chart[
-                    df_total_chart["Quarter"].astype(str) == str(q_before)
-                ]
-
-                nilai_sebelum = pd.to_numeric(
-                    row_before["SEBENAR Q1-25"].iloc[0] if not row_before.empty else 0,
-                    errors="coerce"
-                )
-
-                if pd.notna(nilai_sebelum) and nilai_sebelum != 0:
-                    peratus_banding = (nilai_semasa / nilai_sebelum) * 100
-                    gauge_delta = peratus_banding - 100
-
-                    if gauge_delta > 0:
-                        label_banding = f"+{gauge_delta:.0f}%"
-                        warna_gauge = "#16a34a"
-                    elif gauge_delta < 0:
-                        label_banding = f"{gauge_delta:.0f}%"
-                        warna_gauge = "#dc2626"
-                    else:
-                        label_banding = "0%"
-                        warna_gauge = "#f59e0b"
-                else:
-                    gauge_delta = 0
-                    label_banding = "#DIV/0!"
-                    warna_gauge = "#64748b"
-
-                # Position setiap dot ikut delta.
-                gauge_position = 0.50
-
-                if label_banding != "#DIV/0!":
-                    # Hadkan supaya dot tidak keluar dari gauge.
-                    gauge_position = 0.50 + max(min(gauge_delta / 200, 0.18), -0.18)
-
-                # Susun label bertingkat supaya tidak overlap.
-                label_y = y_tengah + (y_max_chart * (0.075 + (idx_compare % 3) * 0.065))
-                dot_y = y_tengah
-
-                fig_total.add_shape(
-                    type="circle",
-                    xref="paper",
-                    yref="y",
-                    x0=gauge_position - 0.010,
-                    x1=gauge_position + 0.010,
-                    y0=dot_y - (y_max_chart * 0.020),
-                    y1=dot_y + (y_max_chart * 0.020),
-                    line=dict(color=warna_gauge, width=4),
-                    fillcolor=warna_gauge
-                )
-
-                fig_total.add_annotation(
-                    x=gauge_position,
-                    y=label_y,
-                    xref="paper",
-                    yref="y",
-                    text=f"{q_before}: {label_banding}",
-                    showarrow=True,
-                    arrowhead=2,
-                    arrowsize=0.8,
-                    arrowwidth=1.2,
-                    arrowcolor=warna_gauge,
-                    ax=0,
-                    ay=-18,
-                    font=dict(
-                        size=12,
-                        color=warna_gauge,
-                        family="Arial Black"
-                    ),
-                    bgcolor="rgba(255,255,255,0.90)",
-                    bordercolor=warna_gauge,
-                    borderwidth=1.5,
-                    borderpad=6
-                )
-
-                compare_labels.append(f"{q_before} {label_banding}")
-
-            fig_total.add_annotation(
-                x=0.50,
-                y=y_tengah - (y_max_chart * 0.085),
-                xref="paper",
-                yref="y",
-                text=f"Semasa {quarter_semasa} berbanding Tempoh Sebelum",
+                text=f"03-2026 berbanding 03-2025: {label_banding} ({arah_label})",
                 showarrow=False,
                 font=dict(
-                    size=11,
-                    color="#64748b",
-                    family="Arial"
-                )
+                    size=15,
+                    color=warna_gauge,
+                    family="Arial Black"
+                ),
+                bgcolor="rgba(255,255,255,0.92)",
+                bordercolor=warna_gauge,
+                borderwidth=1.5,
+                borderpad=8
             )
 
-        fig_total.update_layout(
-            height=680,
-            xaxis_title="Tempoh",
-            yaxis_title="Jumlah Sebenar (RM)",
-            margin=dict(t=140, b=120, l=90, r=90)
-        )
+            fig_total.update_layout(
+                height=650,
+                xaxis_title="Tempoh",
+                yaxis_title="Jumlah Sebenar (RM)",
+                margin=dict(t=150, b=100, l=90, r=90),
+                template="plotly_white"
+            )
 
-        st.plotly_chart(fig_total, use_container_width=True)
+            st.plotly_chart(fig_total, use_container_width=True)
+
+            df_compare_show = pd.DataFrame({
+                "Perkara": [
+                    "Sebenar 03-2025",
+                    "Sebenar 03-2026",
+                    "Perubahan RM",
+                    "Perubahan %"
+                ],
+                "Nilai": [
+                    format_comma(nilai_2025),
+                    format_comma(nilai_2026),
+                    format_comma(nilai_2026 - nilai_2025),
+                    label_banding
+                ]
+            })
+
+            st.dataframe(
+                df_compare_show,
+                use_container_width=True,
+                hide_index=True
+            )
 
     with st.expander("📊 CARTA 3: PRESTASI  ITEM", expanded=False):
         if len(pilih_quarter) > 1:
@@ -2242,11 +2257,162 @@ if menu == "1. Belanja & Hasil":
 
         st.plotly_chart(fig3, use_container_width=True)
 
+
+    
+    with st.expander("📈 CARTA 6: PRESTASI PTJ (JUMLAH SEBENAR)", expanded=False):
+
+        df_c6 = df_group.copy()
+
+        df_c6["BAJET 2025"] = pd.to_numeric(
+            df_c6["BAJET 2025"],
+            errors="coerce"
+        ).fillna(0)
+
+        df_c6["SASARAN Q1-25"] = pd.to_numeric(
+            df_c6["SASARAN Q1-25"],
+            errors="coerce"
+        ).fillna(0)
+
+        df_c6["SEBENAR Q1-25"] = pd.to_numeric(
+            df_c6["SEBENAR Q1-25"],
+            errors="coerce"
+        ).fillna(0)
+
+        df_c6["% Sasaran"] = df_c6.apply(
+            lambda row: None
+            if row["BAJET 2025"] <= 0
+            else hitung_prestasi(row["SASARAN Q1-25"], row["BAJET 2025"]),
+            axis=1
+        )
+
+        df_c6["% Pencapaian"] = df_c6.apply(
+            lambda row: None
+            if row["SASARAN Q1-25"] <= 0
+            else hitung_prestasi(row["SEBENAR Q1-25"], row["SASARAN Q1-25"]),
+            axis=1
+        )
+
+        df_c6["Jumlah Sebenar"] = df_c6["SEBENAR Q1-25"]
+
+        df_c6 = df_c6.sort_values(
+            by="Jumlah Sebenar",
+            ascending=False
+        ).reset_index(drop=True)
+
+        fig6 = go.Figure()
+
+        # Bar Hijau = Jumlah Sebenar
+        fig6.add_trace(go.Bar(
+            x=df_c6["PTJ1"],
+            y=df_c6["Jumlah Sebenar"],
+            name="Jumlah Sebenar",
+            marker_color="#8ED04F",
+            text=df_c6["Jumlah Sebenar"].apply(lambda x: f"{x:,.0f}"),
+            textposition="inside",
+            insidetextanchor="middle",
+            textfont=dict(
+                size=11,
+                color="black",
+                family="Arial"
+            ),
+            yaxis="y",
+            hovertemplate=(
+                "<b>%{x}</b><br>"
+                "Jumlah Sebenar: %{text}<br>"
+                "<extra></extra>"
+            )
+        ))
+
+        # Line Sasaran
+        fig6.add_trace(go.Scatter(
+            x=df_c6["PTJ1"],
+            y=df_c6["% Sasaran"],
+            name="Sasaran (%)",
+            line=dict(color="#FFB000", width=3, dash="dash"),
+            marker=dict(size=7),
+            mode="lines+markers+text",
+            text=df_c6["% Sasaran"].apply(
+                lambda x: "" if pd.isna(x) else f"{x:.0f}%"
+            ),
+            textposition="top center",
+            textfont=dict(
+                size=10,
+                color="black",
+                family="Arial"
+            ),
+            yaxis="y2"
+        ))
+
+        # Line Pencapaian Merah
+        fig6.add_trace(go.Scatter(
+            x=df_c6["PTJ1"],
+            y=df_c6["% Pencapaian"],
+            name="Pencapaian (%)",
+            line=dict(color="red", width=4),
+            marker=dict(size=7),
+            mode="lines+markers+text",
+            text=df_c6["% Pencapaian"].apply(
+                lambda x: "" if pd.isna(x) else f"{x:.0f}%"
+            ),
+            textposition="top center",
+            textfont=dict(
+                size=10,
+                color="black",
+                family="Arial"
+            ),
+            yaxis="y2"
+        ))
+
+        left_max = df_c6["Jumlah Sebenar"].max()
+
+        right_max = max(
+            pd.to_numeric(df_c6["% Sasaran"], errors="coerce").max(),
+            pd.to_numeric(df_c6["% Pencapaian"], errors="coerce").max()
+        )
+
+        fig6.update_layout(
+            height=780,
+            template="plotly_white",
+            xaxis=dict(
+                title="PTJ",
+                tickangle=-45,
+                automargin=True
+            ),
+            yaxis=dict(
+                title="Jumlah Sebenar (RM)",
+                range=[0, left_max * 1.20 if left_max else 1]
+            ),
+            yaxis2=dict(
+                title="Prestasi (%)",
+                overlaying="y",
+                side="right",
+                ticksuffix="%",
+                range=[0, right_max * 1.20 if right_max else 100],
+                showgrid=False
+            ),
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=-0.25,
+                xanchor="center",
+                x=0.5
+            ),
+            margin=dict(t=120, b=180, l=90, r=90)
+        )
+
+        fig6.update_traces(
+            cliponaxis=False
+        )
+
+        st.plotly_chart(fig6, use_container_width=True)
+
+
     with st.expander("📋 SUMMARY KESELURUHAN", expanded=False):
         summary = df_akhir.groupby(["PTJ1", "Kategori", "DESC", "Quarter"], as_index=False).agg({
             "BAJET 2025": "sum",
             "SASARAN Q1-25": "sum",
-            "SEBENAR Q1-25": "sum"
+            "SEBENAR Q1-25": "sum",
+            "SEBENAR 03-2025": "sum"
         })
         summary["Prestasi_%"] = summary.apply(
             lambda row: hitung_prestasi(row["SEBENAR Q1-25"], row["SASARAN Q1-25"]),
@@ -2264,9 +2430,10 @@ if menu == "1. Belanja & Hasil":
             "Tempoh": "",
             "Bajet": pd.to_numeric(summary["Bajet"], errors="coerce").fillna(0).sum(),
             "Bajet Qtr": pd.to_numeric(summary["Bajet Qtr"], errors="coerce").fillna(0).sum(),
-            "Sebenar": pd.to_numeric(summary["Sebenar"], errors="coerce").fillna(0).sum(),
+            "Sebenar 03-2026": pd.to_numeric(summary["Sebenar 03-2026"], errors="coerce").fillna(0).sum(),
+            "Sebenar 03-2025": pd.to_numeric(summary["Sebenar 03-2025"], errors="coerce").fillna(0).sum(),
             "Prestasi_%": hitung_prestasi(
-                pd.to_numeric(summary["Sebenar"], errors="coerce").fillna(0).sum(),
+                pd.to_numeric(summary["Sebenar 03-2026"], errors="coerce").fillna(0).sum(),
                 pd.to_numeric(summary["Bajet Qtr"], errors="coerce").fillna(0).sum()
             )
         }
@@ -2279,7 +2446,7 @@ if menu == "1. Belanja & Hasil":
         # Paparan summary dengan comma style pada semua nilai numeric.
         summary_show = dataframe_comma_style(
             summary,
-            money_cols=["Bajet", "Bajet Qtr", "Sebenar"],
+            money_cols=["Bajet", "Bajet Qtr", "Sebenar 03-2026", "Sebenar 03-2025"],
             percent_cols=["Prestasi_%"]
         )
 
@@ -2299,7 +2466,7 @@ if menu == "1. Belanja & Hasil":
             use_container_width=True
         )
 
-    st.caption(f"Tempoh: {', '.join(pilih_quarter)} • Prestasi Kewangan CIDB JPKA")
+    st.caption("Tempoh: 03-2026 • Comparison Carta 2 menggunakan column SEBENAR 03-2025 • Prestasi Kewangan CIDB JPKA")
 
 # =======================
 # MENU 2: GERAN - SLICER DARI WORKSHEET DATA COLUMN NAMA DAN LEGEND
@@ -2349,35 +2516,271 @@ elif menu == "2. Geran":
 
     df_geran_tapis = df_geran_work.copy()
 
+    # =======================
+    # SLICER GERAN - PILLS + MULTISELECT CONNECTED STYLE
+    # Sama seperti Belanja & Hasil:
+    # - Pills untuk pilihan cepat.
+    # - Multiselect untuk clear / pilih semula.
+    # - PTJ, NAMA dan LEGEND saling berkait.
+    # - Jika multiselect dikosongkan, maksudnya All untuk pilihan berkaitan.
+    # =======================
+    def _geran_as_list(value):
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return value
+        return [value]
+
+    def _geran_unique_col(df_source, col):
+        if col not in df_source.columns:
+            return []
+        return unique_sorted(df_source[col])
+
+    def _geran_filter_df(df_source, filters):
+        df_temp = df_source.copy()
+        for col, vals in filters.items():
+            vals = _geran_as_list(vals)
+            if vals and col in df_temp.columns:
+                df_temp = df_temp[df_temp[col].astype(str).isin(vals)]
+        return df_temp
+
+    def _geran_base_df():
+        return st.session_state.get("_geran_slicer_base_df_final", pd.DataFrame())
+
+    def _sync_geran_from_ptj():
+        df_base = _geran_base_df()
+        if df_base.empty:
+            return
+
+        ptj_vals = _geran_as_list(st.session_state.get("geran_ptj_final", []))
+
+        # PTJ clear = All PTJ
+        if ptj_vals:
+            df_related = _geran_filter_df(df_base, {ptj_col: ptj_vals})
+        else:
+            df_related = df_base.copy()
+
+        nama_current = _geran_as_list(st.session_state.get("geran_nama_final", []))
+        legend_current = _geran_as_list(st.session_state.get("geran_legend_final", []))
+
+        nama_valid = _geran_unique_col(df_related, nama_col)
+        legend_valid = _geran_unique_col(df_related, legend_col)
+
+        st.session_state["geran_nama_final"] = [
+            x for x in nama_current if x in set(nama_valid)
+        ]
+
+        st.session_state["geran_legend_final"] = [
+            x for x in legend_current if x in set(legend_valid)
+        ]
+
+    def _sync_geran_from_nama():
+        df_base = _geran_base_df()
+        if df_base.empty:
+            return
+
+        ptj_vals = _geran_as_list(st.session_state.get("geran_ptj_final", []))
+        nama_vals = _geran_as_list(st.session_state.get("geran_nama_final", []))
+
+        filters = {}
+        if ptj_vals:
+            filters[ptj_col] = ptj_vals
+        if nama_vals:
+            filters[nama_col] = nama_vals
+
+        df_related = _geran_filter_df(df_base, filters)
+        if df_related.empty:
+            df_related = _geran_filter_df(df_base, {ptj_col: ptj_vals}) if ptj_vals else df_base.copy()
+
+        legend_current = _geran_as_list(st.session_state.get("geran_legend_final", []))
+        legend_valid = _geran_unique_col(df_related, legend_col)
+
+        st.session_state["geran_legend_final"] = [
+            x for x in legend_current if x in set(legend_valid)
+        ]
+
+    def _sync_geran_from_legend():
+        # LEGEND clear = All LEGEND dalam konteks PTJ/NAMA semasa.
+        df_base = _geran_base_df()
+        if df_base.empty:
+            return
+
+        ptj_vals = _geran_as_list(st.session_state.get("geran_ptj_final", []))
+        nama_vals = _geran_as_list(st.session_state.get("geran_nama_final", []))
+        legend_vals = _geran_as_list(st.session_state.get("geran_legend_final", []))
+
+        filters = {}
+        if ptj_vals:
+            filters[ptj_col] = ptj_vals
+        if nama_vals:
+            filters[nama_col] = nama_vals
+        if legend_vals:
+            filters[legend_col] = legend_vals
+
+        df_related = _geran_filter_df(df_base, filters)
+        if df_related.empty:
+            return
+
     with st.sidebar:
         st.markdown("### 🔎  GERAN")
 
-        senarai_ptj = unique_sorted(df_geran_tapis[ptj_col])
-        pilih_ptj_geran = st.multiselect(
-            "Pilih PTJ",
-            senarai_ptj,
-            default=senarai_ptj,
-            key="geran_slicer_ptj"
-        )
-        df_geran_tapis = df_geran_tapis[df_geran_tapis[ptj_col].astype(str).isin(pilih_ptj_geran)]
+        df_geran_slicer_base = df_geran_tapis.copy()
+        st.session_state["_geran_slicer_base_df_final"] = df_geran_slicer_base
 
-        senarai_nama = unique_sorted(df_geran_tapis[nama_col])
-        pilih_nama = st.multiselect(
-            "Pilih NAMA",
-            senarai_nama,
-            default=senarai_nama,
-            key="geran_slicer_nama"
-        )
-        df_geran_tapis = df_geran_tapis[df_geran_tapis[nama_col].astype(str).isin(pilih_nama)]
+        full_geran_ptj = _geran_unique_col(df_geran_slicer_base, ptj_col)
+        full_geran_nama = _geran_unique_col(df_geran_slicer_base, nama_col)
+        full_geran_legend = _geran_unique_col(df_geran_slicer_base, legend_col)
 
-        senarai_legend = unique_sorted(df_geran_tapis[legend_col])
-        pilih_legend = st.multiselect(
-            "Pilih LEGEND",
-            senarai_legend,
-            default=senarai_legend,
-            key="geran_slicer_legend"
+        if "geran_final_slicer_initialized" not in st.session_state:
+            st.session_state["geran_ptj_final"] = full_geran_ptj
+            st.session_state["geran_nama_final"] = full_geran_nama
+            st.session_state["geran_legend_final"] = full_geran_legend
+            st.session_state["geran_final_slicer_initialized"] = True
+
+        # Clean invalid values selepas data berubah.
+        valid_geran_map = {
+            "geran_ptj_final": full_geran_ptj,
+            "geran_nama_final": full_geran_nama,
+            "geran_legend_final": full_geran_legend,
+        }
+
+        for key_v, options_v in valid_geran_map.items():
+            current_v = _geran_as_list(st.session_state.get(key_v, []))
+            st.session_state[key_v] = [x for x in current_v if x in set(options_v)]
+
+        ptj_selected = _geran_as_list(st.session_state.get("geran_ptj_final", []))
+        df_for_nama = (
+            _geran_filter_df(df_geran_slicer_base, {ptj_col: ptj_selected})
+            if ptj_selected else df_geran_slicer_base.copy()
         )
-        df_geran_tapis = df_geran_tapis[df_geran_tapis[legend_col].astype(str).isin(pilih_legend)]
+        opt_nama = _geran_unique_col(df_for_nama, nama_col)
+
+        nama_selected = _geran_as_list(st.session_state.get("geran_nama_final", []))
+        nama_selected = [x for x in nama_selected if x in set(opt_nama)]
+        st.session_state["geran_nama_final"] = nama_selected
+
+        df_for_legend = _geran_filter_df(
+            df_for_nama,
+            {nama_col: nama_selected}
+        ) if nama_selected else df_for_nama.copy()
+
+        opt_legend = _geran_unique_col(df_for_legend, legend_col)
+
+        legend_selected = _geran_as_list(st.session_state.get("geran_legend_final", []))
+        legend_selected = [x for x in legend_selected if x in set(opt_legend)]
+        st.session_state["geran_legend_final"] = legend_selected
+
+        # PTJ Pills + Multiselect
+        def _sync_geran_ptj_pills():
+            ptj_pills = _geran_as_list(st.session_state.get("geran_ptj_pills_multi", []))
+            if ptj_pills:
+                st.session_state["geran_ptj_final"] = ptj_pills
+                _sync_geran_from_ptj()
+
+        st.pills(
+            "⚡ Pilih PTJ",
+            options=full_geran_ptj,
+            selection_mode="multi",
+            key="geran_ptj_pills_multi",
+            on_change=_sync_geran_ptj_pills
+        )
+
+        st.multiselect(
+            "Pilih PTJ (Multi Select)",
+            full_geran_ptj,
+            key="geran_ptj_final",
+            on_change=_sync_geran_from_ptj,
+            placeholder="Semua PTJ"
+        )
+
+        # NAMA Pills + Multiselect
+        def _sync_geran_nama_pills():
+            nama_pills = _geran_as_list(st.session_state.get("geran_nama_pills_multi", []))
+            if nama_pills:
+                st.session_state["geran_nama_final"] = nama_pills
+                _sync_geran_from_nama()
+
+        st.pills(
+            "⚡ Pilih NAMA",
+            options=opt_nama,
+            selection_mode="multi",
+            key="geran_nama_pills_multi",
+            on_change=_sync_geran_nama_pills
+        )
+
+        st.multiselect(
+            "Pilih NAMA (Multi Select)",
+            opt_nama,
+            key="geran_nama_final",
+            on_change=_sync_geran_from_nama,
+            placeholder="Semua NAMA"
+        )
+
+        # LEGEND Pills + Multiselect
+        def _sync_geran_legend_pills():
+            legend_pills = _geran_as_list(st.session_state.get("geran_legend_pills_multi", []))
+            if legend_pills:
+                st.session_state["geran_legend_final"] = legend_pills
+                _sync_geran_from_legend()
+
+        st.pills(
+            "⚡ Pilih LEGEND",
+            options=opt_legend,
+            selection_mode="multi",
+            key="geran_legend_pills_multi",
+            on_change=_sync_geran_legend_pills
+        )
+
+        st.multiselect(
+            "Pilih LEGEND (Multi Select)",
+            opt_legend,
+            key="geran_legend_final",
+            on_change=_sync_geran_from_legend,
+            placeholder="Semua LEGEND"
+        )
+
+        if st.button("♻️ Reset Slicer Geran", key="reset_slicer_geran_final"):
+            for key in [
+                "geran_ptj_final",
+                "geran_nama_final",
+                "geran_legend_final",
+                "geran_ptj_pills_multi",
+                "geran_nama_pills_multi",
+                "geran_legend_pills_multi",
+                "geran_final_slicer_initialized",
+                "_geran_slicer_base_df_final",
+                "geran_pills_ptj",
+                "geran_pills_nama",
+                "geran_pills_legend",
+                "geran_pills_initialized",
+                "_geran_slicer_base_df_pills",
+                "geran_slicer_ptj",
+                "geran_slicer_nama",
+                "geran_slicer_legend",
+            ]:
+                if key in st.session_state:
+                    del st.session_state[key]
+            st.rerun()
+
+    pilih_ptj_geran = _geran_as_list(st.session_state.get("geran_ptj_final", []))
+    pilih_nama = _geran_as_list(st.session_state.get("geran_nama_final", []))
+    pilih_legend = _geran_as_list(st.session_state.get("geran_legend_final", []))
+
+    # Multiselect kosong = All.
+    if pilih_ptj_geran:
+        df_geran_tapis = df_geran_tapis[
+            df_geran_tapis[ptj_col].astype(str).isin(pilih_ptj_geran)
+        ].copy()
+
+    if pilih_nama:
+        df_geran_tapis = df_geran_tapis[
+            df_geran_tapis[nama_col].astype(str).isin(pilih_nama)
+        ].copy()
+
+    if pilih_legend:
+        df_geran_tapis = df_geran_tapis[
+            df_geran_tapis[legend_col].astype(str).isin(pilih_legend)
+        ].copy()
 
     if df_geran_tapis.empty:
         st.warning("Tiada data Geran selepas tapisan dibuat.")
@@ -2761,36 +3164,211 @@ elif menu == "3. P&L":
             index=0
         )
 
+    # =======================
+    # P&L - DATA RASMI JADUAL 6
+    # Rujukan: 4.0 PRESTASI KEWANGAN CIDB
+    # Jadual 6: Ringkasan Hasil dan Perbelanjaan Sehingga 31 Mac 2026
+    # =======================
+
+    def kira_prestasi(sebenar, asas):
+        sebenar = pd.to_numeric(sebenar, errors="coerce")
+        asas = pd.to_numeric(asas, errors="coerce")
+        if pd.isna(sebenar) or pd.isna(asas) or asas == 0:
+            return None
+        return (sebenar / asas) * 100
+
+    def label_pct(nilai):
+        nilai = pd.to_numeric(nilai, errors="coerce")
+        if pd.isna(nilai):
+            return "-"
+        return f"{nilai:.0f}%"
+
+    def format_juta_2(nilai):
+        nilai = pd.to_numeric(nilai, errors="coerce")
+        if pd.isna(nilai):
+            nilai = 0
+        return f"{nilai / 1_000_000:,.2f}"
+
+    df_pl_jadual6 = pd.DataFrame({
+        "PERKARA": [
+            "Hasil",
+            "Belanja program industri",
+            "Belanja mengurus",
+            "Jumlah perbelanjaan",
+            "Untung sebelum cukai dan zakat",
+            "Cukai",
+            "Zakat",
+            "Untung selepas cukai dan zakat",
+            "Belanja Modal",
+            "Jumlah Perbelanjaan",
+            "Lebihan/(Kurangan) Pendapatan Termasuk S/Nilai & H.Ragu",
+            "(-) S/Nilai & H. Ragu",
+            "Lebihan/(Kurangan) Pendapatan Tidak Termasuk S/Nilai & H.Ragu",
+        ],
+        "BAJET 2026": [
+            485_000_000,
+            205_000_000,
+            189_000_000,
+            394_000_000,
+            91_000_000,
+            8_000_000,
+            1_000_000,
+            82_000_000,
+            91_000_000,
+            485_000_000,
+            0,
+            24_600_000,
+            24_600_000,
+        ],
+        "BAJET 03-2026": [
+            120_730_700,
+            30_858_400,
+            39_205_700,
+            70_064_100,
+            50_666_600,
+            0,
+            0,
+            50_666_600,
+            3_324_400,
+            73_388_500,
+            47_342_200,
+            6_000_000,
+            53_342_200,
+        ],
+        "SEBENAR 03-2026": [
+            130_107_903,
+            28_262_263,
+            35_170_017,
+            63_432_280,
+            66_675_622,
+            0,
+            0,
+            66_675_622,
+            2_755_188,
+            66_187_468,
+            63_920_434,
+            5_865_129,
+            69_785_563,
+        ],
+        "SEBENAR 03-2025": [
+            109_523_154,
+            25_014_879,
+            32_782_537,
+            57_797_416,
+            51_725_738,
+            0,
+            0,
+            51_725_738,
+            1_042_041,
+            58_839_457,
+            50_683_697,
+            5_828_867,
+            56_512_564,
+        ],
+    })
+
+    # Kira peratus ikut formula Jadual 6.
+    df_pl_jadual6["Prestasi Bajet 03-2026"] = df_pl_jadual6.apply(
+        lambda row: kira_prestasi(row["SEBENAR 03-2026"], row["BAJET 03-2026"]),
+        axis=1
+    )
+    df_pl_jadual6["Prestasi Bajet 2026"] = df_pl_jadual6.apply(
+        lambda row: kira_prestasi(row["SEBENAR 03-2026"], row["BAJET 2026"]),
+        axis=1
+    )
+    df_pl_jadual6["Prestasi 03-26 vs 03-25"] = df_pl_jadual6.apply(
+        lambda row: kira_prestasi(row["SEBENAR 03-2026"], row["SEBENAR 03-2025"]),
+        axis=1
+    )
+
+    # Paparan utama P&L: Hasil, Jumlah Perbelanjaan dan lebihan.
     df_pl = pd.DataFrame({
-        "PERKARA": ["HASIL", "BELANJA", "SURPLUS/(DEFISIT)"],
-        "BAJET 2026": [363200000, 446120000, -82920000],
-        "SASARAN 03-2026": [120730700, 73388500, 47342200],
-        "SEBENAR 03-2026": [130107903, 66187468, 63920435],
-        "SEBENAR 03-2025": [109523154, 58839457, 50683697]
+        "PERKARA": [
+            "HASIL",
+            "JUMLAH PERBELANJAAN",
+            "LEBIHAN/(KURANGAN) PENDAPATAN TIDAK TERMASUK S/NILAI & H.RAGU"
+        ],
+        "BAJET 2026": [
+            485_000_000,
+            485_000_000,
+            24_600_000,
+        ],
+        "BAJET 03-2026": [
+            120_730_700,
+            73_388_500,
+            53_342_200,
+        ],
+        "SEBENAR 03-2026": [
+            130_107_903,
+            66_187_468,
+            69_785_563,
+        ],
+        "SEBENAR 03-2025": [
+            109_523_154,
+            58_839_457,
+            56_512_564,
+        ],
     })
 
     df_pecahan_belanja = pd.DataFrame({
         "KATEGORI": [
-            "Belanja Program Industri",
-            "Belanja Mengurus",
+            "Belanja program industri",
+            "Belanja mengurus",
             "Belanja Modal"
         ],
-        "BAJET 2026": [200000000, 189000000, 65520000],
-        "SASARAN 03-2026": [30858400, 39205700, 3324400],
-        "SEBENAR 03-2026": [28262263, 35170017, 2755188],
-        "SEBENAR 03-2025": [25014879, 32782537, 1042041]
+        "BAJET 2026": [205_000_000, 189_000_000, 91_000_000],
+        "BAJET 03-2026": [30_858_400, 39_205_700, 3_324_400],
+        "SEBENAR 03-2026": [28_262_263, 35_170_017, 2_755_188],
+        "SEBENAR 03-2025": [25_014_879, 32_782_537, 1_042_041],
+        "Prestasi Bajet 03-2026": [92, 90, 83],
+        "Prestasi Bajet 2026": [14, 19, 3],
+        "Prestasi 03-26 vs 03-25": [113, 107, 264],
     })
+
+    # =======================
+    # KPI RINGKAS
+    # =======================
+    hasil_row = df_pl[df_pl["PERKARA"] == "HASIL"].iloc[0]
+    belanja_row = df_pl[df_pl["PERKARA"] == "JUMLAH PERBELANJAAN"].iloc[0]
+    lebihan_row = df_pl[df_pl["PERKARA"].str.contains("LEBIHAN", na=False)].iloc[0]
+
+    col_pl1, col_pl2, col_pl3, col_pl4 = st.columns(4)
+    with col_pl1:
+        st.metric(
+            "Hasil Sebenar 03-2026",
+            format_nilai(hasil_row["SEBENAR 03-2026"]),
+            f'{label_pct(kira_prestasi(hasil_row["SEBENAR 03-2026"], hasil_row["BAJET 03-2026"]))} vs Bajet 03-2026'
+        )
+    with col_pl2:
+        st.metric(
+            "Jumlah Perbelanjaan",
+            format_nilai(belanja_row["SEBENAR 03-2026"]),
+            f'{label_pct(kira_prestasi(belanja_row["SEBENAR 03-2026"], belanja_row["BAJET 03-2026"]))} vs Bajet 03-2026'
+        )
+    with col_pl3:
+        st.metric(
+            "Lebihan Pendapatan",
+            format_nilai(lebihan_row["SEBENAR 03-2026"]),
+            f'{format_nilai(lebihan_row["SEBENAR 03-2026"] - lebihan_row["SEBENAR 03-2025"])} vs 03-2025'
+        )
+    with col_pl4:
+        st.metric(
+            "Untung Selepas Cukai & Zakat",
+            format_nilai(66_675_622),
+            f'{format_nilai(66_675_622 - 51_725_738)} vs 03-2025'
+        )
 
     st.markdown(f"### 📊 {pilihan_pl}")
 
     if pilihan_pl == "Prestasi Hasil & Belanja CIDB":
 
         df_chart_pl = df_pl[
-            df_pl["PERKARA"].isin(["HASIL", "BELANJA"])
+            df_pl["PERKARA"].isin(["HASIL", "JUMLAH PERBELANJAAN"])
         ].copy()
 
         df_chart_pl = df_chart_pl.melt(
             id_vars="PERKARA",
+            value_vars=["BAJET 2026", "BAJET 03-2026", "SEBENAR 03-2026", "SEBENAR 03-2025"],
             var_name="JENIS",
             value_name="NILAI"
         )
@@ -2799,6 +3377,8 @@ elif menu == "3. P&L":
         df_chart_pl["NILAI_JUTA"] = df_chart_pl["NILAI"] / 1_000_000
         df_chart_pl["LABEL"] = df_chart_pl["NILAI_JUTA"].map(lambda x: f"{x:,.2f}")
 
+        y_max = df_chart_pl["NILAI_JUTA"].max()
+
         fig_pl = px.bar(
             df_chart_pl,
             x="JENIS",
@@ -2806,17 +3386,17 @@ elif menu == "3. P&L":
             color="PERKARA",
             barmode="group",
             text="LABEL",
-            height=700,
+            height=720,
             color_discrete_map={
                 "HASIL": "#d8b4d8",
-                "BELANJA": "#e8742f"
+                "JUMLAH PERBELANJAAN": "#e8742f"
             },
             labels={
                 "JENIS": "",
                 "NILAI_JUTA": "Juta",
                 "PERKARA": ""
             },
-            title="PRESTASI HASIL & BELANJA CIDB 03-2026"
+            title="PRESTASI HASIL & PERBELANJAAN CIDB SEHINGGA 31 MAC 2026"
         )
 
         fig_pl.update_traces(
@@ -2840,20 +3420,24 @@ elif menu == "3. P&L":
             xaxis_title="",
             yaxis_title="Juta",
             xaxis_tickangle=0,
-            yaxis_range=[0, df_chart_pl["NILAI_JUTA"].max() * 1.25],
+            yaxis_range=[0, y_max * 1.25 if y_max else 1],
             uniformtext_minsize=7,
             uniformtext_mode="show"
         )
 
         st.plotly_chart(fig_pl, use_container_width=True)
 
-        df_data_pilihan = df_pl.copy()
-        sheet_name = "PL_HASIL_BELANJA"
+
+
+
+        df_data_pilihan = df_pl_jadual6.copy()
+        sheet_name = "JADUAL6_PL"
 
     elif pilihan_pl == "Pecahan Belanja CIDB":
 
         df_belanja_chart = df_pecahan_belanja.melt(
             id_vars="KATEGORI",
+            value_vars=["BAJET 2026", "BAJET 03-2026", "SEBENAR 03-2026", "SEBENAR 03-2025"],
             var_name="JENIS",
             value_name="NILAI"
         )
@@ -2862,6 +3446,8 @@ elif menu == "3. P&L":
         df_belanja_chart["NILAI_JUTA"] = df_belanja_chart["NILAI"] / 1_000_000
         df_belanja_chart["LABEL"] = df_belanja_chart["NILAI_JUTA"].map(lambda x: f"{x:,.2f}")
 
+        y_max = df_belanja_chart["NILAI_JUTA"].max()
+
         fig_belanja = px.bar(
             df_belanja_chart,
             x="KATEGORI",
@@ -2869,14 +3455,14 @@ elif menu == "3. P&L":
             color="JENIS",
             barmode="group",
             text="LABEL",
-            height=700,
+            height=720,
             color_discrete_sequence=["#d8b4d8", "#e8742f", "#8fd17f", "#7aa6c2"],
             labels={
                 "KATEGORI": "",
                 "NILAI_JUTA": "Juta",
                 "JENIS": ""
             },
-            title="PECAHAN BELANJA CIDB 03-2026"
+            title="PECAHAN BELANJA CIDB SEHINGGA 31 MAC 2026"
         )
 
         fig_belanja.update_traces(
@@ -2892,12 +3478,22 @@ elif menu == "3. P&L":
             margin=dict(t=160, b=150, l=90, r=90),
             xaxis_tickangle=0,
             yaxis_title="Juta",
-            yaxis_range=[0, df_belanja_chart["NILAI_JUTA"].max() * 1.30],
+            yaxis_range=[0, y_max * 1.30 if y_max else 1],
             uniformtext_minsize=7,
             uniformtext_mode="show"
         )
 
         st.plotly_chart(fig_belanja, use_container_width=True)
+
+        df_belanja_pct = df_pecahan_belanja.melt(
+            id_vars="KATEGORI",
+            value_vars=["Prestasi Bajet 03-2026", "Prestasi Bajet 2026", "Prestasi 03-26 vs 03-25"],
+            var_name="JENIS",
+            value_name="PERATUS"
+        )
+
+
+
 
         df_data_pilihan = df_pecahan_belanja.copy()
         sheet_name = "PECAHAN_BELANJA"
@@ -2905,11 +3501,12 @@ elif menu == "3. P&L":
     else:
 
         df_surplus = df_pl[
-            df_pl["PERKARA"] == "SURPLUS/(DEFISIT)"
+            df_pl["PERKARA"].str.contains("LEBIHAN", na=False)
         ].copy()
 
         df_surplus_chart = df_surplus.melt(
             id_vars="PERKARA",
+            value_vars=["BAJET 2026", "BAJET 03-2026", "SEBENAR 03-2026", "SEBENAR 03-2025"],
             var_name="JENIS",
             value_name="NILAI"
         )
@@ -2923,11 +3520,11 @@ elif menu == "3. P&L":
             x="JENIS",
             y="NILAI_JUTA",
             text="LABEL",
-            height=700,
+            height=720,
             color="JENIS",
             color_discrete_map={
                 "BAJET 2026": "#d9534f",
-                "SASARAN 03-2026": "#a8d5a2",
+                "BAJET 03-2026": "#a8d5a2",
                 "SEBENAR 03-2026": "#2e8b57",
                 "SEBENAR 03-2025": "#5cb85c"
             },
@@ -2935,7 +3532,7 @@ elif menu == "3. P&L":
                 "JENIS": "",
                 "NILAI_JUTA": "Juta"
             },
-            title="SURPLUS/(DEFISIT) PRESTASI BAJET CIDB 03-2026"
+            title="LEBIHAN/(KURANGAN) PENDAPATAN TIDAK TERMASUK S/NILAI & H.RAGU"
         )
 
         fig_surplus.update_traces(
@@ -2957,7 +3554,7 @@ elif menu == "3. P&L":
             yaxis_title="Juta",
             yaxis_range=[
                 min_y * 1.35 if min_y < 0 else 0,
-                max_y * 1.30 if max_y > 0 else 0
+                max_y * 1.30 if max_y > 0 else 1
             ],
             uniformtext_minsize=7,
             uniformtext_mode="show"
@@ -2965,20 +3562,61 @@ elif menu == "3. P&L":
 
         st.plotly_chart(fig_surplus, use_container_width=True)
 
-        df_data_pilihan = df_pl.copy()
+        df_untung = df_pl_jadual6[
+            df_pl_jadual6["PERKARA"].isin([
+                "Untung sebelum cukai dan zakat",
+                "Untung selepas cukai dan zakat",
+                "Lebihan/(Kurangan) Pendapatan Termasuk S/Nilai & H.Ragu",
+                "(-) S/Nilai & H. Ragu",
+                "Lebihan/(Kurangan) Pendapatan Tidak Termasuk S/Nilai & H.Ragu"
+            ])
+        ].copy()
+
+        df_untung_chart = df_untung.melt(
+            id_vars="PERKARA",
+            value_vars=["BAJET 2026", "BAJET 03-2026", "SEBENAR 03-2026", "SEBENAR 03-2025"],
+            var_name="JENIS",
+            value_name="NILAI"
+        )
+        df_untung_chart["NILAI_JUTA"] = pd.to_numeric(df_untung_chart["NILAI"], errors="coerce").fillna(0) / 1_000_000
+        df_untung_chart["LABEL"] = df_untung_chart["NILAI_JUTA"].map(lambda x: f"{x:,.2f}")
+
+
+
+
+        df_data_pilihan = df_pl_jadual6.copy()
         sheet_name = "SURPLUS_DEFISIT"
 
-    st.markdown("### 📋 Data P&L")
+    st.markdown("### 📋 Data P&L - Jadual 6")
 
     df_show = df_data_pilihan.copy()
 
-    for col in df_show.columns:
-        if col not in ["PERKARA", "KATEGORI"]:
-            df_show[col] = (
-                pd.to_numeric(df_show[col], errors="coerce")
-                .fillna(0)
-                .apply(format_comma)
+    money_cols = [
+        "BAJET 2026", "BAJET 03-2026", "SEBENAR 03-2026", "SEBENAR 03-2025"
+    ]
+    percent_cols = [
+        "Prestasi Bajet 03-2026", "Prestasi Bajet 2026", "Prestasi 03-26 vs 03-25"
+    ]
+
+    for col in money_cols:
+        if col in df_show.columns:
+            df_show[col] = pd.to_numeric(df_show[col], errors="coerce").fillna(0).apply(format_comma)
+
+    for col in percent_cols:
+        if col in df_show.columns:
+            df_show[col] = pd.to_numeric(df_show[col], errors="coerce").map(
+                lambda x: "-" if pd.isna(x) else f"{x:.0f}%"
             )
+
+    # Papar '-' untuk Cukai/Zakat yang tiada nilai sasaran/sebenar dalam jadual asal.
+    if "PERKARA" in df_show.columns:
+        cukai_zakat_mask = df_show["PERKARA"].astype(str).isin(["Cukai", "Zakat"])
+        for col in ["BAJET 03-2026", "SEBENAR 03-2026", "SEBENAR 03-2025"]:
+            if col in df_show.columns:
+                df_show.loc[cukai_zakat_mask, col] = "-"
+        for col in percent_cols:
+            if col in df_show.columns:
+                df_show.loc[cukai_zakat_mask, col] = "-"
 
     st.dataframe(df_show, use_container_width=True, hide_index=True)
 
@@ -2987,7 +3625,7 @@ elif menu == "3. P&L":
     st.download_button(
         "📥 Download Data P&L Excel",
         data=excel_pl,
-        file_name="Data_PL_CIDB.xlsx",
+        file_name="Data_PL_Jadual6_CIDB.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         use_container_width=True
     )
