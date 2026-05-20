@@ -14,6 +14,85 @@ st.set_page_config(
 )
 
 
+# =======================
+# PASSWORD PROTECTION
+# Untuk Streamlit Cloud:
+# Settings > Secrets
+# APP_PASSWORD = "password-anda"
+# =======================
+def check_password():
+    """
+    Papar login page sebelum dashboard.
+    Jika password betul, dashboard akan dibuka.
+    """
+
+    # Ambil password dari Streamlit Secrets.
+    # Fallback hanya untuk local testing.
+    try:
+        app_password = st.secrets["APP_PASSWORD"]
+    except Exception:
+        app_password = "cidb123"
+
+    if "authenticated" not in st.session_state:
+        st.session_state["authenticated"] = False
+
+    if st.session_state["authenticated"]:
+        return True
+
+    st.markdown(
+        """
+        <div style="
+            max-width:460px;
+            margin:80px auto 20px auto;
+            padding:32px;
+            border-radius:24px;
+            background:rgba(255,255,255,0.78);
+            border:1px solid rgba(255,255,255,0.75);
+            box-shadow:0 18px 45px rgba(15,23,42,0.16);
+            text-align:center;
+        ">
+            <div style="font-size:48px;">🔐</div>
+            <h2 style="margin-bottom:6px;color:#1e293b;">
+                Akses Dashboard JPKA CIDB
+            </h2>
+            <p style="margin-top:0;color:#64748b;font-size:14px;">
+                Sila masukkan password untuk meneruskan.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    col_login1, col_login2, col_login3 = st.columns([1, 1.25, 1])
+
+    with col_login2:
+        password_input = st.text_input(
+            "Password",
+            type="password",
+            placeholder="Masukkan password",
+            label_visibility="collapsed",
+            key="login_password_input"
+        )
+
+        login_clicked = st.button(
+            "LOGIN",
+            use_container_width=True,
+            type="primary"
+        )
+
+        if login_clicked:
+            if password_input == app_password:
+                st.session_state["authenticated"] = True
+                st.rerun()
+            else:
+                st.error("❌ Password salah. Sila cuba lagi.")
+
+    st.stop()
+
+
+check_password()
+
+
 def html(kod_html):
     st.markdown(dedent(kod_html).strip(), unsafe_allow_html=True)
 
@@ -948,13 +1027,33 @@ if menu == "1. Belanja & Hasil":
                 df_temp = df_temp[df_temp[col].astype(str).isin(vals)]
         return df_temp
 
+    def _pills_unselected_options(options, selected):
+        """
+        Papar semua item yang belum dipilih dalam multiselect sebagai pills.
+        Bila item dikeluarkan daripada multiselect, ia akan muncul semula di pills.
+        """
+        selected_set = set(_as_list(selected))
+        return [
+            x for x in _as_list(options)
+            if x not in selected_set
+        ]
+
     def _set_all_from_df(df_related):
         """Auto select semua slicer mengikut dataframe berkaitan."""
-        st.session_state["belanja_pejabat_final2"] = _unique_col(df_related, "PTJ")
-        st.session_state["belanja_ptj_final2"] = _unique_col(df_related, "PTJ1")
-        st.session_state["belanja_kategori_final2"] = _unique_col(df_related, "Kategori")
-        st.session_state["belanja_item_final2"] = _unique_col(df_related, "DESC")
-        st.session_state["belanja_kod_item_final2"] = _unique_col(df_related, "KOD1")
+        if not st.session_state.get("belanja_lock_pejabat", False):
+            st.session_state["belanja_pejabat_final2"] = _unique_col(df_related, "PTJ")
+
+        if not st.session_state.get("belanja_lock_ptj", False):
+            st.session_state["belanja_ptj_final2"] = _unique_col(df_related, "PTJ1")
+
+        if not st.session_state.get("belanja_lock_kategori", False):
+            st.session_state["belanja_kategori_final2"] = _unique_col(df_related, "Kategori")
+
+        if not st.session_state.get("belanja_lock_item", False):
+            st.session_state["belanja_item_final2"] = _unique_col(df_related, "DESC")
+
+        if not st.session_state.get("belanja_lock_kod_item", False):
+            st.session_state["belanja_kod_item_final2"] = _unique_col(df_related, "KOD1")
 
     def _set_child_slicers_preserve_kategori(df_related):
         """
@@ -981,11 +1080,20 @@ if menu == "1. Belanja & Hasil":
             df_kategori = df_related.copy()
             kategori_vals = _unique_col(df_kategori, "Kategori")
 
-        st.session_state["belanja_pejabat_final2"] = _unique_col(df_kategori, "PTJ")
-        st.session_state["belanja_ptj_final2"] = _unique_col(df_kategori, "PTJ1")
-        st.session_state["belanja_kategori_final2"] = kategori_vals
-        st.session_state["belanja_item_final2"] = _unique_col(df_kategori, "DESC")
-        st.session_state["belanja_kod_item_final2"] = _unique_col(df_kategori, "KOD1")
+        if not st.session_state.get("belanja_lock_pejabat", False):
+            st.session_state["belanja_pejabat_final2"] = _unique_col(df_kategori, "PTJ")
+
+        if not st.session_state.get("belanja_lock_ptj", False):
+            st.session_state["belanja_ptj_final2"] = _unique_col(df_kategori, "PTJ1")
+
+        if not st.session_state.get("belanja_lock_kategori", False):
+            st.session_state["belanja_kategori_final2"] = kategori_vals
+
+        if not st.session_state.get("belanja_lock_item", False):
+            st.session_state["belanja_item_final2"] = _unique_col(df_kategori, "DESC")
+
+        if not st.session_state.get("belanja_lock_kod_item", False):
+            st.session_state["belanja_kod_item_final2"] = _unique_col(df_kategori, "KOD1")
 
     def _base_df():
         return st.session_state.get("_belanja_slicer_base_df_v2", pd.DataFrame())
@@ -1050,11 +1158,19 @@ if menu == "1. Belanja & Hasil":
 
         # Pilih kategori user kekal, slicer lain auto ikut kategori.
         # Item/Kod Item auto selected semua yang berkaitan bila kategori dipilih.
-        st.session_state["belanja_pejabat_final2"] = _unique_col(df_related, "PTJ")
-        st.session_state["belanja_ptj_final2"] = _unique_col(df_related, "PTJ1")
+        if not st.session_state.get("belanja_lock_pejabat", False):
+            st.session_state["belanja_pejabat_final2"] = _unique_col(df_related, "PTJ")
+
+        if not st.session_state.get("belanja_lock_ptj", False):
+            st.session_state["belanja_ptj_final2"] = _unique_col(df_related, "PTJ1")
+
         st.session_state["belanja_kategori_final2"] = kategori_vals
-        st.session_state["belanja_item_final2"] = _unique_col(df_related, "DESC")
-        st.session_state["belanja_kod_item_final2"] = _unique_col(df_related, "KOD1")
+
+        if not st.session_state.get("belanja_lock_item", False):
+            st.session_state["belanja_item_final2"] = _unique_col(df_related, "DESC")
+
+        if not st.session_state.get("belanja_lock_kod_item", False):
+            st.session_state["belanja_kod_item_final2"] = _unique_col(df_related, "KOD1")
 
     def _sync_from_item():
         df_base = _base_df()
@@ -1082,15 +1198,22 @@ if menu == "1. Belanja & Hasil":
         if df_related.empty:
             df_related = df_by_kategori.copy()
 
-        st.session_state["belanja_pejabat_final2"] = _unique_col(df_related, "PTJ")
-        st.session_state["belanja_ptj_final2"] = _unique_col(df_related, "PTJ1")
-        st.session_state["belanja_kategori_final2"] = _unique_col(df_related, "Kategori")
+        if not st.session_state.get("belanja_lock_pejabat", False):
+            st.session_state["belanja_pejabat_final2"] = _unique_col(df_related, "PTJ")
+
+        if not st.session_state.get("belanja_lock_ptj", False):
+            st.session_state["belanja_ptj_final2"] = _unique_col(df_related, "PTJ1")
+
+        if not st.session_state.get("belanja_lock_kategori", False):
+            st.session_state["belanja_kategori_final2"] = _unique_col(df_related, "Kategori")
+
         st.session_state["belanja_item_final2"] = item_vals
 
         # Kod Item WAJIB refer Item yang selected.
         # Bila Item dipilih semula selepas clear, Kod Item auto select semua kod berkaitan Item itu.
         # Jika Item kosong, Kod Item ikut semua kod dalam kategori.
-        st.session_state["belanja_kod_item_final2"] = _unique_col(df_related, "KOD1")
+        if not st.session_state.get("belanja_lock_kod_item", False):
+            st.session_state["belanja_kod_item_final2"] = _unique_col(df_related, "KOD1")
 
     def _sync_from_kod_item():
         df_base = _base_df()
@@ -1125,16 +1248,105 @@ if menu == "1. Belanja & Hasil":
         if df_related.empty:
             df_related = df_by_context.copy()
 
-        st.session_state["belanja_pejabat_final2"] = _unique_col(df_related, "PTJ")
-        st.session_state["belanja_ptj_final2"] = _unique_col(df_related, "PTJ1")
-        st.session_state["belanja_kategori_final2"] = _unique_col(df_related, "Kategori")
-        st.session_state["belanja_item_final2"] = [
-            x for x in item_vals
-            if x in set(_unique_col(df_related, "DESC"))
-        ]
+        if not st.session_state.get("belanja_lock_pejabat", False):
+            st.session_state["belanja_pejabat_final2"] = _unique_col(df_related, "PTJ")
+
+        if not st.session_state.get("belanja_lock_ptj", False):
+            st.session_state["belanja_ptj_final2"] = _unique_col(df_related, "PTJ1")
+
+        if not st.session_state.get("belanja_lock_kategori", False):
+            st.session_state["belanja_kategori_final2"] = _unique_col(df_related, "Kategori")
+
+        if not st.session_state.get("belanja_lock_item", False):
+            st.session_state["belanja_item_final2"] = [
+                x for x in item_vals
+                if x in set(_unique_col(df_related, "DESC"))
+            ]
+
         st.session_state["belanja_kod_item_final2"] = kod_vals
 
     with st.sidebar:
+
+        # =====================================================
+        # KATEGORI + LOCK
+        # =====================================================
+        col_kategori_title, col_kategori_lock = st.columns([8,1])
+
+        with col_kategori_title:
+            st.markdown("### 📂 Pilih Kategori")
+
+        with col_kategori_lock:
+            st.toggle(
+                "🔒",
+                key="belanja_lock_kategori",
+                label_visibility="collapsed",
+                help="Lock Kategori"
+            )
+
+        # =====================================================
+        # PEJABAT + LOCK
+        # =====================================================
+        col_pejabat_title, col_pejabat_lock = st.columns([8,1])
+
+        with col_pejabat_title:
+            st.markdown("### 🏢 Pilih Pejabat")
+
+        with col_pejabat_lock:
+            st.toggle(
+                "🔒",
+                key="belanja_lock_pejabat",
+                label_visibility="collapsed",
+                help="Lock Pejabat"
+            )
+
+        # =====================================================
+        # PTJ + LOCK
+        # =====================================================
+        col_ptj_title, col_ptj_lock = st.columns([8,1])
+
+        with col_ptj_title:
+            st.markdown("### ⚡ Pilih PTJ")
+
+        with col_ptj_lock:
+            st.toggle(
+                "🔒",
+                key="belanja_lock_ptj",
+                label_visibility="collapsed",
+                help="Lock PTJ"
+            )
+
+        # =====================================================
+        # ITEM + LOCK
+        # =====================================================
+        col_item_title, col_item_lock = st.columns([8,1])
+
+        with col_item_title:
+            st.markdown("### 🧾 Pilih Item")
+
+        with col_item_lock:
+            st.toggle(
+                "🔒",
+                key="belanja_lock_item",
+                label_visibility="collapsed",
+                help="Lock Item"
+            )
+
+        # =====================================================
+        # KOD ITEM + LOCK
+        # =====================================================
+        col_kod_title, col_kod_lock = st.columns([8,1])
+
+        with col_kod_title:
+            st.markdown("### 🔢 Pilih Kod Item")
+
+        with col_kod_lock:
+            st.toggle(
+                "🔒",
+                key="belanja_lock_kod_item",
+                label_visibility="collapsed",
+                help="Lock Kod Item"
+            )
+
         df_slicer_base = df_tapis.copy()
         st.session_state["_belanja_slicer_base_df_v2"] = df_slicer_base
 
@@ -1272,17 +1484,23 @@ if menu == "1. Belanja & Hasil":
             if df_ptj_pills.empty:
                 return
 
-            # Preserve Kategori semasa jika masih valid dalam PTJ yang dipilih.
-            st.session_state["belanja_ptj_final2"] = ptj_pills
+            # Add pills ke pilihan PTJ sedia ada.
+            current_ptj = _as_list(st.session_state.get("belanja_ptj_final2", []))
+            valid_ptj = _unique_col(df_ptj_pills, "PTJ1")
+            st.session_state["belanja_ptj_final2"] = sorted(
+                list(set(current_ptj + [x for x in ptj_pills if x in set(valid_ptj)]))
+            )
+
             _set_child_slicers_preserve_kategori(df_ptj_pills)
-            st.session_state["belanja_ptj_final2"] = [
-                x for x in ptj_pills
-                if x in set(_unique_col(df_ptj_pills, "PTJ1"))
-            ]
+
+        opt_ptj_pills = _pills_unselected_options(
+            opt_ptj,
+            st.session_state.get("belanja_ptj_final2", [])
+        )
 
         st.pills(
             "⚡ Pilih PTJ",
-            options=opt_ptj,
+            options=opt_ptj_pills,
             selection_mode="multi",
             key="ptj_pills_multi_final2",
             on_change=_sync_from_ptj_pills
@@ -1320,15 +1538,31 @@ if menu == "1. Belanja & Hasil":
             if df_item_pills.empty:
                 return
 
-            st.session_state["belanja_item_final2"] = item_pills
-            st.session_state["belanja_kod_item_final2"] = _unique_col(df_item_pills, "KOD1")
-            st.session_state["belanja_pejabat_final2"] = _unique_col(df_item_pills, "PTJ")
-            st.session_state["belanja_ptj_final2"] = _unique_col(df_item_pills, "PTJ1")
-            st.session_state["belanja_kategori_final2"] = _unique_col(df_item_pills, "Kategori")
+            current_item = _as_list(st.session_state.get("belanja_item_final2", []))
+            st.session_state["belanja_item_final2"] = sorted(
+                list(set(current_item + item_pills))
+            )
+
+            if not st.session_state.get("belanja_lock_kod_item", False):
+                st.session_state["belanja_kod_item_final2"] = _unique_col(df_item_pills, "KOD1")
+
+            if not st.session_state.get("belanja_lock_pejabat", False):
+                st.session_state["belanja_pejabat_final2"] = _unique_col(df_item_pills, "PTJ")
+
+            if not st.session_state.get("belanja_lock_ptj", False):
+                st.session_state["belanja_ptj_final2"] = _unique_col(df_item_pills, "PTJ1")
+
+            if not st.session_state.get("belanja_lock_kategori", False):
+                st.session_state["belanja_kategori_final2"] = _unique_col(df_item_pills, "Kategori")
+
+        opt_item_pills = _pills_unselected_options(
+            opt_item,
+            st.session_state.get("belanja_item_final2", [])
+        )
 
         st.pills(
             "⚡ Pilih Item",
-            options=opt_item,
+            options=opt_item_pills,
             selection_mode="multi",
             key="item_pills_multi_final2",
             on_change=_sync_from_item_pills
@@ -1365,15 +1599,31 @@ if menu == "1. Belanja & Hasil":
             if df_kod_pills.empty:
                 return
 
-            st.session_state["belanja_kod_item_final2"] = kod_pills
-            st.session_state["belanja_item_final2"] = _unique_col(df_kod_pills, "DESC")
-            st.session_state["belanja_pejabat_final2"] = _unique_col(df_kod_pills, "PTJ")
-            st.session_state["belanja_ptj_final2"] = _unique_col(df_kod_pills, "PTJ1")
-            st.session_state["belanja_kategori_final2"] = _unique_col(df_kod_pills, "Kategori")
+            current_kod = _as_list(st.session_state.get("belanja_kod_item_final2", []))
+            st.session_state["belanja_kod_item_final2"] = sorted(
+                list(set(current_kod + kod_pills))
+            )
+
+            if not st.session_state.get("belanja_lock_item", False):
+                st.session_state["belanja_item_final2"] = _unique_col(df_kod_pills, "DESC")
+
+            if not st.session_state.get("belanja_lock_pejabat", False):
+                st.session_state["belanja_pejabat_final2"] = _unique_col(df_kod_pills, "PTJ")
+
+            if not st.session_state.get("belanja_lock_ptj", False):
+                st.session_state["belanja_ptj_final2"] = _unique_col(df_kod_pills, "PTJ1")
+
+            if not st.session_state.get("belanja_lock_kategori", False):
+                st.session_state["belanja_kategori_final2"] = _unique_col(df_kod_pills, "Kategori")
+
+        opt_kod_pills = _pills_unselected_options(
+            opt_kod,
+            st.session_state.get("belanja_kod_item_final2", [])
+        )
 
         st.pills(
             "⚡ Pilih Kod Item",
-            options=opt_kod,
+            options=opt_kod_pills,
             selection_mode="multi",
             key="kod_pills_multi_final2",
             on_change=_sync_from_kod_pills
@@ -1397,6 +1647,11 @@ if menu == "1. Belanja & Hasil":
                 "ptj_pills_multi_final2",
                 "item_pills_multi_final2",
                 "kod_pills_multi_final2",
+                "belanja_lock_kategori",
+                "belanja_lock_pejabat",
+                "belanja_lock_ptj",
+                "belanja_lock_item",
+                "belanja_lock_kod_item",
                 "belanja_final2_slicer_initialized",
                 "belanja_pejabat_final",
                 "belanja_ptj_final",
@@ -2320,9 +2575,42 @@ if menu == "1. Belanja & Hasil":
         # Line kuning = Nilai Sasaran, bukan peratus.
         df_c6["Jumlah Sasaran"] = df_c6["SASARAN Q1-25"]
 
+        # =====================================================
+        # SORT CARTA 6
+        # Lebih stabil daripada klik legend untuk hide/show.
+        # User boleh pilih nilai yang mahu dijadikan asas susunan.
+        # =====================================================
+        sort_col_c6a, sort_col_c6b = st.columns([2, 1])
+
+        with sort_col_c6a:
+            sort_carta6 = st.radio(
+                "Sort Carta 6 ikut",
+                [
+                    "Jumlah Sebenar",
+                    "Sasaran Nilai",
+                    "Pencapaian (%)"
+                ],
+                horizontal=True,
+                key="sort_carta6_belanja_hasil"
+            )
+
+        with sort_col_c6b:
+            sort_desc_c6 = st.toggle(
+                "Descending",
+                value=True,
+                key="sort_desc_carta6_belanja_hasil"
+            )
+
+        sort_column_map_c6 = {
+            "Jumlah Sebenar": "Jumlah Sebenar",
+            "Sasaran Nilai": "Jumlah Sasaran",
+            "Pencapaian (%)": "% Pencapaian"
+        }
+
         df_c6 = df_c6.sort_values(
-            by="Jumlah Sebenar",
-            ascending=False
+            by=sort_column_map_c6.get(sort_carta6, "Jumlah Sebenar"),
+            ascending=not sort_desc_c6,
+            na_position="last"
         ).reset_index(drop=True)
 
         fig6 = go.Figure()
