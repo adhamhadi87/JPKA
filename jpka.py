@@ -3547,6 +3547,111 @@ elif menu == "3. P&L":
 
     else:
 
+        # =========================================================
+        # CARTA TAMBAHAN:
+        # SURPLUS/(DEFISIT) PRESTASI BAJET CIDB
+        # TERMASUK SUSUT NILAI DAN HUTANG RAGU
+        #
+        # Formula:
+        # Termasuk S/Nilai & H.Ragu = Hasil - Jumlah Perbelanjaan
+        # Nota:
+        # BAJET 2026 = 485j - 485j = 0
+        # =========================================================
+        hasil_term = df_pl_jadual6[
+            df_pl_jadual6["PERKARA"].astype(str).str.strip().str.lower().eq("hasil")
+        ].iloc[0]
+
+        jumlah_perbelanjaan_term = df_pl_jadual6[
+            df_pl_jadual6["PERKARA"].astype(str).str.strip().eq("Jumlah Perbelanjaan")
+        ].iloc[0]
+
+        df_surplus_termasuk_chart = pd.DataFrame({
+            "JENIS": [
+                "BAJET 2026",
+                "BAJET 03-2026",
+                "SEBENAR 03-2026",
+                "SEBENAR 03-2025"
+            ],
+            "NILAI": [
+                hasil_term["BAJET 2026"] - jumlah_perbelanjaan_term["BAJET 2026"],
+                hasil_term["BAJET 03-2026"] - jumlah_perbelanjaan_term["BAJET 03-2026"],
+                hasil_term["SEBENAR 03-2026"] - jumlah_perbelanjaan_term["SEBENAR 03-2026"],
+                hasil_term["SEBENAR 03-2025"] - jumlah_perbelanjaan_term["SEBENAR 03-2025"],
+            ]
+        })
+
+        df_surplus_termasuk_chart["NILAI"] = pd.to_numeric(
+            df_surplus_termasuk_chart["NILAI"],
+            errors="coerce"
+        ).fillna(0)
+
+        df_surplus_termasuk_chart["NILAI_JUTA"] = (
+            df_surplus_termasuk_chart["NILAI"] / 1_000_000
+        )
+
+        df_surplus_termasuk_chart["LABEL"] = (
+            df_surplus_termasuk_chart["NILAI_JUTA"]
+            .map(lambda x: f"{x:,.2f}")
+        )
+
+        fig_surplus_termasuk = px.bar(
+            df_surplus_termasuk_chart,
+            x="JENIS",
+            y="NILAI_JUTA",
+            text="LABEL",
+            height=720,
+            color="JENIS",
+            color_discrete_map={
+                "BAJET 2026": "#d9534f",
+                "BAJET 03-2026": "#a8d5a2",
+                "SEBENAR 03-2026": "#2e8b57",
+                "SEBENAR 03-2025": "#5cb85c"
+            },
+            labels={
+                "JENIS": "",
+                "NILAI_JUTA": "Juta"
+            },
+            title=(
+                "SURPLUS/(DEFISIT) PRESTASI BAJET CIDB "
+                "TERMASUK SUSUT NILAI & HUTANG RAGU"
+            )
+        )
+
+        fig_surplus_termasuk.update_traces(
+            texttemplate="%{text}",
+            textposition="outside",
+            cliponaxis=False,
+            constraintext="none",
+            textfont=dict(
+                size=14,
+                color="black",
+                family="Arial"
+            )
+        )
+
+        min_y_termasuk = df_surplus_termasuk_chart["NILAI_JUTA"].min()
+        max_y_termasuk = df_surplus_termasuk_chart["NILAI_JUTA"].max()
+
+        fig_surplus_termasuk.update_layout(
+            template="plotly_white",
+            showlegend=False,
+            margin=dict(t=170, b=150, l=90, r=90),
+            xaxis_tickangle=0,
+            yaxis_title="Juta",
+            yaxis_range=[
+                min_y_termasuk * 1.35 if min_y_termasuk < 0 else 0,
+                max_y_termasuk * 1.30 if max_y_termasuk > 0 else 1
+            ],
+            uniformtext_minsize=7,
+            uniformtext_mode="show"
+        )
+
+        st.plotly_chart(
+            fig_surplus_termasuk,
+            use_container_width=True
+        )
+
+
         df_surplus = df_pl[
             df_pl["PERKARA"].str.contains("LEBIHAN", na=False)
         ].copy()
@@ -3608,6 +3713,9 @@ elif menu == "3. P&L":
         )
 
         st.plotly_chart(fig_surplus, use_container_width=True)
+
+
+
 
         df_untung = df_pl_jadual6[
             df_pl_jadual6["PERKARA"].isin([
