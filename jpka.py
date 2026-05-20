@@ -352,6 +352,34 @@ def format_comma_no_decimal(nilai):
     return f"{nilai:,.0f}"
 
 
+
+def short_number(nilai):
+    """
+    Format nombor ringkas tanpa RM.
+    Contoh:
+    1,250,000   -> 1.3j
+    980,000     -> 980.0k
+    1,200,000,000 -> 1.2b
+    """
+    nilai = pd.to_numeric(nilai, errors="coerce")
+
+    if pd.isna(nilai):
+        return ""
+
+    tanda = "-" if nilai < 0 else ""
+    nilai_abs = abs(float(nilai))
+
+    if nilai_abs >= 1_000_000_000:
+        return f"{tanda}{nilai_abs / 1_000_000_000:.1f}b"
+
+    if nilai_abs >= 1_000_000:
+        return f"{tanda}{nilai_abs / 1_000_000:.1f}j"
+
+    if nilai_abs >= 1_000:
+        return f"{tanda}{nilai_abs / 1_000:.1f}k"
+
+    return f"{tanda}{nilai_abs:,.0f}"
+
 def dataframe_comma_style(df, money_cols=None, percent_cols=None):
     """
     Tukar column numeric tertentu kepada comma style untuk paparan report.
@@ -2278,13 +2306,7 @@ if menu == "1. Belanja & Hasil":
             errors="coerce"
         ).fillna(0)
 
-        df_c6["% Sasaran"] = df_c6.apply(
-            lambda row: None
-            if row["BAJET 2025"] <= 0
-            else hitung_prestasi(row["SASARAN Q1-25"], row["BAJET 2025"]),
-            axis=1
-        )
-
+        # Line merah = Pencapaian (%) pada axis kanan.
         df_c6["% Pencapaian"] = df_c6.apply(
             lambda row: None
             if row["SASARAN Q1-25"] <= 0
@@ -2292,7 +2314,11 @@ if menu == "1. Belanja & Hasil":
             axis=1
         )
 
+        # Bar hijau = Jumlah Sebenar.
         df_c6["Jumlah Sebenar"] = df_c6["SEBENAR Q1-25"]
+
+        # Line kuning = Nilai Sasaran, bukan peratus.
+        df_c6["Jumlah Sasaran"] = df_c6["SASARAN Q1-25"]
 
         df_c6 = df_c6.sort_values(
             by="Jumlah Sebenar",
@@ -2301,13 +2327,13 @@ if menu == "1. Belanja & Hasil":
 
         fig6 = go.Figure()
 
-        # Bar Hijau = Jumlah Sebenar
+        # Bar Hijau = Jumlah Sebenar, axis kiri.
         fig6.add_trace(go.Bar(
             x=df_c6["PTJ1"],
             y=df_c6["Jumlah Sebenar"],
             name="Jumlah Sebenar",
             marker_color="#8ED04F",
-            text=df_c6["Jumlah Sebenar"].apply(lambda x: f"{x:,.0f}"),
+            text=df_c6["Jumlah Sebenar"].apply(short_number),
             textposition="inside",
             insidetextanchor="middle",
             textfont=dict(
@@ -2323,27 +2349,30 @@ if menu == "1. Belanja & Hasil":
             )
         ))
 
-        # Line Sasaran
+        # Line Kuning = Jumlah Sasaran, axis kiri.
         fig6.add_trace(go.Scatter(
             x=df_c6["PTJ1"],
-            y=df_c6["% Sasaran"],
-            name="Sasaran (%)",
+            y=df_c6["Jumlah Sasaran"],
+            name="Sasaran Nilai",
             line=dict(color="#FFB000", width=3, dash="dash"),
             marker=dict(size=7),
             mode="lines+markers+text",
-            text=df_c6["% Sasaran"].apply(
-                lambda x: "" if pd.isna(x) else f"{x:.0f}%"
-            ),
+            text=df_c6["Jumlah Sasaran"].apply(short_number),
             textposition="top center",
             textfont=dict(
                 size=10,
                 color="black",
                 family="Arial"
             ),
-            yaxis="y2"
+            yaxis="y",
+            hovertemplate=(
+                "<b>%{x}</b><br>"
+                "Sasaran Nilai: %{text}<br>"
+                "<extra></extra>"
+            )
         ))
 
-        # Line Pencapaian Merah
+        # Line Merah = Pencapaian %, axis kanan.
         fig6.add_trace(go.Scatter(
             x=df_c6["PTJ1"],
             y=df_c6["% Pencapaian"],
@@ -2360,15 +2389,23 @@ if menu == "1. Belanja & Hasil":
                 color="black",
                 family="Arial"
             ),
-            yaxis="y2"
+            yaxis="y2",
+            hovertemplate=(
+                "<b>%{x}</b><br>"
+                "Pencapaian: %{y:.2f}%<br>"
+                "<extra></extra>"
+            )
         ))
 
-        left_max = df_c6["Jumlah Sebenar"].max()
-
-        right_max = max(
-            pd.to_numeric(df_c6["% Sasaran"], errors="coerce").max(),
-            pd.to_numeric(df_c6["% Pencapaian"], errors="coerce").max()
+        left_max = max(
+            pd.to_numeric(df_c6["Jumlah Sebenar"], errors="coerce").max(),
+            pd.to_numeric(df_c6["Jumlah Sasaran"], errors="coerce").max()
         )
+
+        right_max = pd.to_numeric(
+            df_c6["% Pencapaian"],
+            errors="coerce"
+        ).max()
 
         fig6.update_layout(
             height=780,
@@ -2379,11 +2416,12 @@ if menu == "1. Belanja & Hasil":
                 automargin=True
             ),
             yaxis=dict(
-                title="Jumlah Sebenar (RM)",
-                range=[0, left_max * 1.20 if left_max else 1]
+                title="Jumlah / Sasaran (RM)",
+                range=[0, left_max * 1.20 if left_max else 1],
+                tickformat=",.0f"
             ),
             yaxis2=dict(
-                title="Prestasi (%)",
+                title="Pencapaian (%)",
                 overlaying="y",
                 side="right",
                 ticksuffix="%",
