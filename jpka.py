@@ -4,6 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from io import BytesIO
 from textwrap import dedent
+import os
 import streamlit.components.v1 as components
 
 # =======================
@@ -14,6 +15,84 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+
+# =======================
+# LOGIN / PASSWORD APP
+# =======================
+# Password utama:
+# - Streamlit Cloud: letak APP_PASSWORD dalam Settings > Secrets
+# - Local PC: kalau tiada secrets/env, default sementara ialah "JPKA032026"
+#   Tukar default ini kalau mahu password lain.
+DEFAULT_APP_PASSWORD = "JPKA032026"
+
+
+def get_app_password():
+    """Ambil password daripada st.secrets, environment, atau default."""
+    password = ""
+
+    try:
+        password = str(st.secrets.get("APP_PASSWORD", "")).strip()
+    except Exception:
+        password = ""
+
+    if not password:
+        password = str(os.environ.get("APP_PASSWORD", "")).strip()
+
+    if not password:
+        password = DEFAULT_APP_PASSWORD
+
+    return password
+
+
+def require_login():
+    """Papar login page dan stop app jika belum login."""
+    if st.session_state.get("dashboard_authenticated", False):
+        return
+
+    st.markdown(
+        """
+        <div style="
+            max-width: 460px;
+            margin: 8vh auto 1rem auto;
+            padding: 28px 30px;
+            border-radius: 22px;
+            background: rgba(255,255,255,0.78);
+            border: 1px solid rgba(255,255,255,0.8);
+            box-shadow: 0 18px 45px rgba(15,23,42,0.16);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            text-align: center;
+        ">
+            <div style="font-size:42px; line-height:1; margin-bottom:8px;">🔐</div>
+            <h2 style="margin:0; color:#1e293b; font-weight:800;">Login Dashboard</h2>
+            <p style="margin:8px 0 0 0; color:#64748b; font-size:14px;">
+                Masukkan password untuk akses Dashboard Prestasi Kewangan CIDB.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    with st.form("login_dashboard_form", clear_on_submit=False):
+        password_input = st.text_input(
+            "Password",
+            type="password",
+            placeholder="Masukkan password"
+        )
+        submitted = st.form_submit_button("Login", use_container_width=True)
+
+    if submitted:
+        if password_input == get_app_password():
+            st.session_state["dashboard_authenticated"] = True
+            st.rerun()
+        else:
+            st.error("Password salah. Sila cuba semula.")
+
+    st.stop()
+
+
+require_login()
 
 
 # =========================================================
@@ -995,7 +1074,10 @@ html(f"""
 
 st.sidebar.markdown("### 🔎 Slicer / Filter")
 st.sidebar.markdown("---")
-if st.sidebar.button("🔄 Refresh Data Excel"):
+if st.sidebar.button("🚪 Logout", use_container_width=True):
+    st.session_state["dashboard_authenticated"] = False
+    st.rerun()
+if st.sidebar.button("🔄 Refresh Data Excel", use_container_width=True):
     st.rerun()
 
 
