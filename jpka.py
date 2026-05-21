@@ -4,6 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from io import BytesIO
 from textwrap import dedent
+import streamlit.components.v1 as components
 
 # =======================
 # TETAPAN PAGE
@@ -14,83 +15,134 @@ st.set_page_config(
 )
 
 
-# =======================
-# PASSWORD PROTECTION
-# Untuk Streamlit Cloud:
-# Settings > Secrets
-# APP_PASSWORD = "password-anda"
-# =======================
-def check_password():
-    """
-    Papar login page sebelum dashboard.
-    Jika password betul, dashboard akan dibuka.
-    """
+# =========================================================
+# SIDEBAR PILLS - DARK GLASS STYLE
+# Tulisan lebih jelas, transparent masih kekal.
+# =========================================================
+st.markdown("""
+<style>
 
-    # Ambil password dari Streamlit Secrets.
-    # Fallback hanya untuk local testing.
-    try:
-        app_password = st.secrets["APP_PASSWORD"]
-    except Exception:
-        app_password = "cidb123"
+/* ================================
+   SIDEBAR EXPANDER - DARK GLASS
+================================ */
 
-    if "authenticated" not in st.session_state:
-        st.session_state["authenticated"] = False
+section[data-testid="stSidebar"] div[data-testid="stExpander"] {
+    background: rgba(15, 23, 42, 0.32) !important;
+    border: 1px solid rgba(255,255,255,0.18) !important;
+    border-radius: 18px !important;
+    box-shadow:
+        0 10px 24px rgba(0,0,0,0.18),
+        inset 0 1px 0 rgba(255,255,255,0.10) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    margin-bottom: 12px !important;
+    overflow: hidden !important;
+}
 
-    if st.session_state["authenticated"]:
-        return True
+/* Header expander */
+section[data-testid="stSidebar"] div[data-testid="stExpander"] summary {
+    background: rgba(255,255,255,0.08) !important;
+    border-radius: 16px !important;
+    padding: 10px 12px !important;
+}
 
-    st.markdown(
-        """
-        <div style="
-            max-width:460px;
-            margin:80px auto 20px auto;
-            padding:32px;
-            border-radius:24px;
-            background:rgba(255,255,255,0.78);
-            border:1px solid rgba(255,255,255,0.75);
-            box-shadow:0 18px 45px rgba(15,23,42,0.16);
-            text-align:center;
-        ">
-            <div style="font-size:48px;">🔐</div>
-            <h2 style="margin-bottom:6px;color:#1e293b;">
-                Akses Dashboard JPKA CIDB
-            </h2>
-            <p style="margin-top:0;color:#64748b;font-size:14px;">
-                Sila masukkan password untuk meneruskan.
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+/* Pastikan title/summary nampak */
+section[data-testid="stSidebar"] div[data-testid="stExpander"] summary,
+section[data-testid="stSidebar"] div[data-testid="stExpander"] summary *,
+section[data-testid="stSidebar"] div[data-testid="stExpander"] p,
+section[data-testid="stSidebar"] div[data-testid="stExpander"] span,
+section[data-testid="stSidebar"] div[data-testid="stExpander"] label {
+    color: #F8FAFC !important;
+    opacity: 1 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.45);
+    font-weight: 700 !important;
+}
 
-    col_login1, col_login2, col_login3 = st.columns([1, 1.25, 1])
+/* Caption dalam expander */
+section[data-testid="stSidebar"] div[data-testid="stExpander"] [data-testid="stCaptionContainer"],
+section[data-testid="stSidebar"] div[data-testid="stExpander"] [data-testid="stCaptionContainer"] * {
+    color: #CBD5E1 !important;
+    opacity: 1 !important;
+    font-weight: 600 !important;
+}
 
-    with col_login2:
-        password_input = st.text_input(
-            "Password",
-            type="password",
-            placeholder="Masukkan password",
-            label_visibility="collapsed",
-            key="login_password_input"
-        )
+/* ================================
+   PILLS - DARK MIRROR
+================================ */
 
-        login_clicked = st.button(
-            "LOGIN",
-            use_container_width=True,
-            type="primary"
-        )
+/* Semua pill */
+section[data-testid="stSidebar"] button[data-baseweb="tag"] {
+    background: rgba(30, 41, 59, 0.62) !important;
+    border: 1px solid rgba(255,255,255,0.24) !important;
 
-        if login_clicked:
-            if password_input == app_password:
-                st.session_state["authenticated"] = True
-                st.rerun()
-            else:
-                st.error("❌ Password salah. Sila cuba lagi.")
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 
-    st.stop()
+    border-radius: 999px !important;
+    color: #F8FAFC !important;
 
+    transition: all 0.20s ease;
 
-check_password()
+    box-shadow:
+        0 6px 18px rgba(0,0,0,0.22),
+        inset 0 1px 1px rgba(255,255,255,0.14);
+
+    padding: 0.25rem 0.85rem !important;
+}
+
+/* Text dalam pill */
+section[data-testid="stSidebar"] button[data-baseweb="tag"] *,
+section[data-testid="stSidebar"] button[data-baseweb="tag"] span,
+section[data-testid="stSidebar"] button[data-baseweb="tag"] div {
+    color: #F8FAFC !important;
+    opacity: 1 !important;
+    font-weight: 700 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.45);
+}
+
+/* Hover */
+section[data-testid="stSidebar"] button[data-baseweb="tag"]:hover {
+    background: rgba(51, 65, 85, 0.82) !important;
+    border-color: rgba(255,255,255,0.40) !important;
+    transform: translateY(-1px);
+}
+
+/* Selected pill */
+section[data-testid="stSidebar"] button[data-baseweb="tag"][aria-pressed="true"] {
+    background: linear-gradient(
+        135deg,
+        rgba(37, 99, 235, 0.90),
+        rgba(14, 165, 233, 0.62)
+    ) !important;
+
+    border: 1px solid rgba(255,255,255,0.55) !important;
+    color: #FFFFFF !important;
+
+    box-shadow:
+        0 8px 26px rgba(37,99,235,0.35),
+        inset 0 1px 1px rgba(255,255,255,0.30);
+}
+
+/* ================================
+   Sidebar background keep corporate
+================================ */
+section[data-testid="stSidebar"] {
+    background:
+        linear-gradient(
+            180deg,
+            rgba(15,23,42,0.96) 0%,
+            rgba(30,58,138,0.92) 55%,
+            rgba(15,23,42,0.96) 100%
+        ) !important;
+}
+
+/* General sidebar text */
+section[data-testid="stSidebar"] * {
+    color: #F8FAFC !important;
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 
 def html(kod_html):
@@ -992,19 +1044,16 @@ if menu == "1. Belanja & Hasil":
         st.stop()
 
     # =======================
-    # EXCEL-STYLE CONNECTED SLICER - FINAL V2
+    # PILLS + TICK SLICER ENGINE
+    # BELANJA & HASIL
     #
-    # Default:
-    # - Semua slicer selected all.
-    #
-    # Rule:
-    # - Pejabat tak boleh kosong. Jika clear, auto pilih semua Pejabat.
-    # - PTJ tak boleh kosong. Options ikut Pejabat. Jika clear, auto pilih semua PTJ berkaitan Pejabat.
-    # - Kategori at least 1 selected. Jika clear, auto pilih semua Kategori berkaitan Pejabat/PTJ.
-    # - Item boleh clear dan refer Kategori.
-    # - Kod Item boleh clear dan refer Item.
-    # - Contoh pilih Kategori = Hasil:
-    #   Pejabat/PTJ/Item/Kod Item auto tinggal dan auto selected yang berkaitan.
+    # Konsep:
+    # - Semua slicer guna pills.
+    # - Pilihan yang selected dipaparkan dengan ✅.
+    # - Pilihan yang belum selected dipaparkan dengan ◻️.
+    # - Klik pill = toggle pilih/buang.
+    # - Empty selected = ALL.
+    # - Options setiap slicer dikira berdasarkan filter lain.
     # =======================
 
     def _as_list(value):
@@ -1019,623 +1068,235 @@ if menu == "1. Belanja & Hasil":
             return []
         return unique_sorted(df_source[col])
 
-    def _filter_df(df_source, filters):
+    def _filter_df(df_source, filters, exclude_col=None):
         df_temp = df_source.copy()
+
         for col, vals in filters.items():
+            if exclude_col is not None and col == exclude_col:
+                continue
+
             vals = _as_list(vals)
             if vals and col in df_temp.columns:
-                df_temp = df_temp[df_temp[col].astype(str).isin(vals)]
+                df_temp = df_temp[
+                    df_temp[col].astype(str).isin(vals)
+                ]
+
         return df_temp
 
-    def _pills_unselected_options(options, selected):
+    def _get_belanja_filter_state():
+        return {
+            "Kategori": _as_list(st.session_state.get("belanja_kategori_final2", [])),
+            "PTJ": _as_list(st.session_state.get("belanja_pejabat_final2", [])),
+            "PTJ1": _as_list(st.session_state.get("belanja_ptj_final2", [])),
+            "DESC": _as_list(st.session_state.get("belanja_item_final2", [])),
+            "KOD1": _as_list(st.session_state.get("belanja_kod_item_final2", [])),
+        }
+
+    def _set_belanja_filter_value(col, values):
+        values = _as_list(values)
+
+        if col == "Kategori":
+            st.session_state["belanja_kategori_final2"] = values
+        elif col == "PTJ":
+            st.session_state["belanja_pejabat_final2"] = values
+        elif col == "PTJ1":
+            st.session_state["belanja_ptj_final2"] = values
+        elif col == "DESC":
+            st.session_state["belanja_item_final2"] = values
+        elif col == "KOD1":
+            st.session_state["belanja_kod_item_final2"] = values
+
+    def _clean_filter_values(df_source):
         """
-        Papar semua item yang belum dipilih dalam multiselect sebagai pills.
-        Bila item dikeluarkan daripada multiselect, ia akan muncul semula di pills.
+        Buang selected value yang sudah tidak wujud.
+        Empty tetap bermaksud ALL.
         """
-        selected_set = set(_as_list(selected))
-        return [
-            x for x in _as_list(options)
-            if x not in selected_set
+        filters = _get_belanja_filter_state()
+
+        for col, vals in filters.items():
+            valid = set(_unique_col(df_source, col))
+            cleaned = [
+                x for x in _as_list(vals)
+                if x in valid
+            ]
+            _set_belanja_filter_value(col, cleaned)
+
+    def _options_for_slicer(df_source, col):
+        """
+        Options untuk slicer dikira berdasarkan semua filter lain,
+        kecuali filter dirinya sendiri.
+        """
+        filters = _get_belanja_filter_state()
+        df_context = _filter_df(
+            df_source,
+            filters,
+            exclude_col=col
+        )
+        return _unique_col(df_context, col)
+
+    def _pill_label(value, selected_values):
+        selected_set = set(_as_list(selected_values))
+        return f"✅ {value}" if value in selected_set else f"◻️ {value}"
+
+    def _remove_tick_icon(label):
+        label = str(label)
+        label = label.replace("✅ ", "", 1)
+        label = label.replace("◻️ ", "", 1)
+        return label.strip()
+
+    def _sync_pill_toggle(col, pill_key, selected_key):
+        """
+        Toggle behaviour:
+        - Jika pill belum selected, klik akan add.
+        - Jika pill sudah selected, klik akan remove.
+        """
+        raw_clicked = _as_list(st.session_state.get(pill_key, []))
+        if not raw_clicked:
+            return
+
+        clicked_values = [
+            _remove_tick_icon(x)
+            for x in raw_clicked
         ]
 
-    def _set_all_from_df(df_related):
-        """Auto select semua slicer mengikut dataframe berkaitan."""
-        if not st.session_state.get("belanja_lock_pejabat", False):
-            st.session_state["belanja_pejabat_final2"] = _unique_col(df_related, "PTJ")
+        current_selected = _as_list(st.session_state.get(selected_key, []))
+        selected_set = set(current_selected)
 
-        if not st.session_state.get("belanja_lock_ptj", False):
-            st.session_state["belanja_ptj_final2"] = _unique_col(df_related, "PTJ1")
+        for value in clicked_values:
+            if value in selected_set:
+                selected_set.remove(value)
+            else:
+                selected_set.add(value)
 
-        if not st.session_state.get("belanja_lock_kategori", False):
-            st.session_state["belanja_kategori_final2"] = _unique_col(df_related, "Kategori")
+        new_selected = sorted(list(selected_set))
+        st.session_state[selected_key] = new_selected
 
-        if not st.session_state.get("belanja_lock_item", False):
-            st.session_state["belanja_item_final2"] = _unique_col(df_related, "DESC")
+        # Clear temporary clicked pills supaya boleh klik semula.
+        st.session_state[pill_key] = []
 
-        if not st.session_state.get("belanja_lock_kod_item", False):
-            st.session_state["belanja_kod_item_final2"] = _unique_col(df_related, "KOD1")
-
-    def _set_child_slicers_preserve_kategori(df_related):
+    def _render_pill_slicer(title, col, selected_key, pill_key, df_source):
         """
-        Auto-sync slicer anak tanpa reset pilihan Kategori user.
-        Contoh: jika Kategori = Hasil, ubah/clear PTJ tidak akan tukar balik
-        kepada semua kategori selagi Hasil masih wujud dalam konteks data baharu.
+        Render slicer dalam bentuk expander.
+        Tajuk sahaja dipaparkan dahulu.
+        Bila klik tajuk, pills akan muncul.
         """
-        if df_related.empty:
-            return
+        options = _options_for_slicer(
+            df_source,
+            col
+        )
 
-        kategori_current = _as_list(st.session_state.get("belanja_kategori_final2", []))
-        kategori_valid = _unique_col(df_related, "Kategori")
+        current_selected = [
+            x for x in _as_list(st.session_state.get(selected_key, []))
+            if x in set(options)
+        ]
+        st.session_state[selected_key] = current_selected
 
-        kategori_keep = [x for x in kategori_current if x in set(kategori_valid)]
-
-        if kategori_current and kategori_keep:
-            kategori_vals = kategori_keep
-            df_kategori = _filter_df(df_related, {"Kategori": kategori_vals})
+        if current_selected:
+            expander_title = f"{title}  ✅ {len(current_selected)}/{len(options)}"
         else:
-            kategori_vals = kategori_valid
-            df_kategori = df_related.copy()
+            expander_title = f"{title}  🌐 All ({len(options)})"
 
-        if df_kategori.empty:
-            df_kategori = df_related.copy()
-            kategori_vals = _unique_col(df_kategori, "Kategori")
+        with st.expander(expander_title, expanded=False):
+            if current_selected:
+                st.caption(f"Selected: {len(current_selected)} / {len(options)}")
+            else:
+                st.caption(f"All selected secara automatik: {len(options)} item")
 
-        if not st.session_state.get("belanja_lock_pejabat", False):
-            st.session_state["belanja_pejabat_final2"] = _unique_col(df_kategori, "PTJ")
-
-        if not st.session_state.get("belanja_lock_ptj", False):
-            st.session_state["belanja_ptj_final2"] = _unique_col(df_kategori, "PTJ1")
-
-        if not st.session_state.get("belanja_lock_kategori", False):
-            st.session_state["belanja_kategori_final2"] = kategori_vals
-
-        if not st.session_state.get("belanja_lock_item", False):
-            st.session_state["belanja_item_final2"] = _unique_col(df_kategori, "DESC")
-
-        if not st.session_state.get("belanja_lock_kod_item", False):
-            st.session_state["belanja_kod_item_final2"] = _unique_col(df_kategori, "KOD1")
-
-    def _base_df():
-        return st.session_state.get("_belanja_slicer_base_df_v2", pd.DataFrame())
-
-    def _sync_from_pejabat():
-        df_base = _base_df()
-        if df_base.empty:
-            return
-
-        pejabat_vals = _as_list(st.session_state.get("belanja_pejabat_final2", []))
-        if not pejabat_vals:
-            pejabat_vals = _unique_col(df_base, "PTJ")
-            st.session_state["belanja_pejabat_final2"] = pejabat_vals
-
-        df_related = _filter_df(df_base, {"PTJ": pejabat_vals})
-        if df_related.empty:
-            df_related = df_base.copy()
-
-        _set_child_slicers_preserve_kategori(df_related)
-
-    def _sync_from_ptj():
-        df_base = _base_df()
-        if df_base.empty:
-            return
-
-        pejabat_vals = _as_list(st.session_state.get("belanja_pejabat_final2", []))
-        if not pejabat_vals:
-            pejabat_vals = _unique_col(df_base, "PTJ")
-            st.session_state["belanja_pejabat_final2"] = pejabat_vals
-
-        df_by_pejabat = _filter_df(df_base, {"PTJ": pejabat_vals})
-
-        ptj_vals = _as_list(st.session_state.get("belanja_ptj_final2", []))
-        valid_ptj = _unique_col(df_by_pejabat, "PTJ1")
-        ptj_vals = [x for x in ptj_vals if x in set(valid_ptj)]
-
-        if not ptj_vals:
-            ptj_vals = valid_ptj
-            st.session_state["belanja_ptj_final2"] = ptj_vals
-
-        df_related = _filter_df(df_by_pejabat, {"PTJ1": ptj_vals})
-        if df_related.empty:
-            df_related = df_by_pejabat.copy()
-
-        _set_child_slicers_preserve_kategori(df_related)
-
-    def _sync_from_kategori():
-        df_base = _base_df()
-        if df_base.empty:
-            return
-
-        kategori_vals = _as_list(st.session_state.get("belanja_kategori_final2", []))
-
-        # Kategori wajib at least 1. Jika clear, auto pilih semua kategori.
-        if not kategori_vals:
-            kategori_vals = _unique_col(df_base, "Kategori")
-            st.session_state["belanja_kategori_final2"] = kategori_vals
-
-        df_related = _filter_df(df_base, {"Kategori": kategori_vals})
-        if df_related.empty:
-            df_related = df_base.copy()
-
-        # Pilih kategori user kekal, slicer lain auto ikut kategori.
-        # Item/Kod Item auto selected semua yang berkaitan bila kategori dipilih.
-        if not st.session_state.get("belanja_lock_pejabat", False):
-            st.session_state["belanja_pejabat_final2"] = _unique_col(df_related, "PTJ")
-
-        if not st.session_state.get("belanja_lock_ptj", False):
-            st.session_state["belanja_ptj_final2"] = _unique_col(df_related, "PTJ1")
-
-        st.session_state["belanja_kategori_final2"] = kategori_vals
-
-        if not st.session_state.get("belanja_lock_item", False):
-            st.session_state["belanja_item_final2"] = _unique_col(df_related, "DESC")
-
-        if not st.session_state.get("belanja_lock_kod_item", False):
-            st.session_state["belanja_kod_item_final2"] = _unique_col(df_related, "KOD1")
-
-    def _sync_from_item():
-        df_base = _base_df()
-        if df_base.empty:
-            return
-
-        kategori_vals = _as_list(st.session_state.get("belanja_kategori_final2", []))
-        if not kategori_vals:
-            kategori_vals = _unique_col(df_base, "Kategori")
-            st.session_state["belanja_kategori_final2"] = kategori_vals
-
-        df_by_kategori = _filter_df(df_base, {"Kategori": kategori_vals})
-
-        item_vals = _as_list(st.session_state.get("belanja_item_final2", []))
-        valid_item = _unique_col(df_by_kategori, "DESC")
-        item_vals = [x for x in item_vals if x in set(valid_item)]
-
-        # Item boleh clear.
-        # Jika clear, maksudnya All Item untuk kategori dipilih.
-        if item_vals:
-            df_related = _filter_df(df_by_kategori, {"DESC": item_vals})
-        else:
-            df_related = df_by_kategori.copy()
-
-        if df_related.empty:
-            df_related = df_by_kategori.copy()
-
-        if not st.session_state.get("belanja_lock_pejabat", False):
-            st.session_state["belanja_pejabat_final2"] = _unique_col(df_related, "PTJ")
-
-        if not st.session_state.get("belanja_lock_ptj", False):
-            st.session_state["belanja_ptj_final2"] = _unique_col(df_related, "PTJ1")
-
-        if not st.session_state.get("belanja_lock_kategori", False):
-            st.session_state["belanja_kategori_final2"] = _unique_col(df_related, "Kategori")
-
-        st.session_state["belanja_item_final2"] = item_vals
-
-        # Kod Item WAJIB refer Item yang selected.
-        # Bila Item dipilih semula selepas clear, Kod Item auto select semua kod berkaitan Item itu.
-        # Jika Item kosong, Kod Item ikut semua kod dalam kategori.
-        if not st.session_state.get("belanja_lock_kod_item", False):
-            st.session_state["belanja_kod_item_final2"] = _unique_col(df_related, "KOD1")
-
-    def _sync_from_kod_item():
-        df_base = _base_df()
-        if df_base.empty:
-            return
-
-        kategori_vals = _as_list(st.session_state.get("belanja_kategori_final2", []))
-        if not kategori_vals:
-            kategori_vals = _unique_col(df_base, "Kategori")
-            st.session_state["belanja_kategori_final2"] = kategori_vals
-
-        item_vals = _as_list(st.session_state.get("belanja_item_final2", []))
-        kod_vals = _as_list(st.session_state.get("belanja_kod_item_final2", []))
-
-        # Kod Item refer kepada Item.
-        # Jika Item kosong, guna konteks Kategori sebagai fallback.
-        if item_vals:
-            df_by_context = _filter_df(df_base, {"DESC": item_vals})
-        else:
-            df_by_context = _filter_df(df_base, {"Kategori": kategori_vals})
-
-        valid_kod = _unique_col(df_by_context, "KOD1")
-        kod_vals = [x for x in kod_vals if x in set(valid_kod)]
-
-        # Kod Item boleh clear.
-        # Jika clear, maksudnya All Kod Item untuk Item dipilih.
-        if kod_vals:
-            df_related = _filter_df(df_by_context, {"KOD1": kod_vals})
-        else:
-            df_related = df_by_context.copy()
-
-        if df_related.empty:
-            df_related = df_by_context.copy()
-
-        if not st.session_state.get("belanja_lock_pejabat", False):
-            st.session_state["belanja_pejabat_final2"] = _unique_col(df_related, "PTJ")
-
-        if not st.session_state.get("belanja_lock_ptj", False):
-            st.session_state["belanja_ptj_final2"] = _unique_col(df_related, "PTJ1")
-
-        if not st.session_state.get("belanja_lock_kategori", False):
-            st.session_state["belanja_kategori_final2"] = _unique_col(df_related, "Kategori")
-
-        if not st.session_state.get("belanja_lock_item", False):
-            st.session_state["belanja_item_final2"] = [
-                x for x in item_vals
-                if x in set(_unique_col(df_related, "DESC"))
+            pill_options = [
+                _pill_label(x, current_selected)
+                for x in options
             ]
 
-        st.session_state["belanja_kod_item_final2"] = kod_vals
+            st.pills(
+                title,
+                options=pill_options,
+                selection_mode="multi",
+                key=pill_key,
+                label_visibility="collapsed",
+                on_change=lambda: _sync_pill_toggle(
+                    col,
+                    pill_key,
+                    selected_key
+                )
+            )
 
     with st.sidebar:
 
-        # =====================================================
-        # KATEGORI + LOCK
-        # =====================================================
-        col_kategori_title, col_kategori_lock = st.columns([8,1])
-
-        with col_kategori_title:
-            st.markdown("### 📂 Pilih Kategori")
-
-        with col_kategori_lock:
-            st.toggle(
-                "🔒",
-                key="belanja_lock_kategori",
-                label_visibility="collapsed",
-                help="Lock Kategori"
-            )
-
-        # =====================================================
-        # PEJABAT + LOCK
-        # =====================================================
-        col_pejabat_title, col_pejabat_lock = st.columns([8,1])
-
-        with col_pejabat_title:
-            st.markdown("### 🏢 Pilih Pejabat")
-
-        with col_pejabat_lock:
-            st.toggle(
-                "🔒",
-                key="belanja_lock_pejabat",
-                label_visibility="collapsed",
-                help="Lock Pejabat"
-            )
-
-        # =====================================================
-        # PTJ + LOCK
-        # =====================================================
-        col_ptj_title, col_ptj_lock = st.columns([8,1])
-
-        with col_ptj_title:
-            st.markdown("### ⚡ Pilih PTJ")
-
-        with col_ptj_lock:
-            st.toggle(
-                "🔒",
-                key="belanja_lock_ptj",
-                label_visibility="collapsed",
-                help="Lock PTJ"
-            )
-
-        # =====================================================
-        # ITEM + LOCK
-        # =====================================================
-        col_item_title, col_item_lock = st.columns([8,1])
-
-        with col_item_title:
-            st.markdown("### 🧾 Pilih Item")
-
-        with col_item_lock:
-            st.toggle(
-                "🔒",
-                key="belanja_lock_item",
-                label_visibility="collapsed",
-                help="Lock Item"
-            )
-
-        # =====================================================
-        # KOD ITEM + LOCK
-        # =====================================================
-        col_kod_title, col_kod_lock = st.columns([8,1])
-
-        with col_kod_title:
-            st.markdown("### 🔢 Pilih Kod Item")
-
-        with col_kod_lock:
-            st.toggle(
-                "🔒",
-                key="belanja_lock_kod_item",
-                label_visibility="collapsed",
-                help="Lock Kod Item"
-            )
-
         df_slicer_base = df_tapis.copy()
-        st.session_state["_belanja_slicer_base_df_v2"] = df_slicer_base
 
-        full_pejabat = _unique_col(df_slicer_base, "PTJ")
-        full_ptj = _unique_col(df_slicer_base, "PTJ1")
-        full_kategori = _unique_col(df_slicer_base, "Kategori")
-        full_item = _unique_col(df_slicer_base, "DESC")
-        full_kod_item = _unique_col(df_slicer_base, "KOD1")
+        # Buang state lama yang tidak digunakan.
+        legacy_keys = [
+            "belanja_lock_kategori",
+            "belanja_lock_pejabat",
+            "belanja_lock_ptj",
+            "belanja_lock_item",
+            "belanja_lock_kod_item",
+        ]
 
-        if "belanja_final2_slicer_initialized" not in st.session_state:
-            st.session_state["belanja_pejabat_final2"] = full_pejabat
-            st.session_state["belanja_ptj_final2"] = full_ptj
-            st.session_state["belanja_kategori_final2"] = full_kategori
-            st.session_state["belanja_item_final2"] = full_item
-            st.session_state["belanja_kod_item_final2"] = full_kod_item
-            st.session_state["belanja_final2_slicer_initialized"] = True
+        for legacy_key in legacy_keys:
+            if legacy_key in st.session_state:
+                del st.session_state[legacy_key]
 
-        # Clean invalid values after tempoh change.
-        valid_map = {
-            "belanja_pejabat_final2": full_pejabat,
-            "belanja_ptj_final2": full_ptj,
-            "belanja_kategori_final2": full_kategori,
-            "belanja_item_final2": full_item,
-            "belanja_kod_item_final2": full_kod_item,
-        }
+        # Initialize selected keys.
+        selected_keys = [
+            "belanja_kategori_final2",
+            "belanja_pejabat_final2",
+            "belanja_ptj_final2",
+            "belanja_item_final2",
+            "belanja_kod_item_final2",
+        ]
 
-        for key_v, options_v in valid_map.items():
-            current_v = _as_list(st.session_state.get(key_v, []))
-            cleaned_v = [x for x in current_v if x in set(options_v)]
-            st.session_state[key_v] = cleaned_v
+        for key in selected_keys:
+            if key not in st.session_state:
+                st.session_state[key] = []
 
-        # Mandatory defaults if accidentally empty.
-        if not st.session_state.get("belanja_pejabat_final2", []):
-            st.session_state["belanja_pejabat_final2"] = full_pejabat
+        _clean_filter_values(df_slicer_base)
 
-        pejabat_vals_for_ptj = _as_list(st.session_state.get("belanja_pejabat_final2", []))
-        df_for_ptj = _filter_df(df_slicer_base, {"PTJ": pejabat_vals_for_ptj})
-        opt_ptj = _unique_col(df_for_ptj, "PTJ1")
-
-        if not st.session_state.get("belanja_ptj_final2", []):
-            st.session_state["belanja_ptj_final2"] = opt_ptj
-
-        if not st.session_state.get("belanja_kategori_final2", []):
-            st.session_state["belanja_kategori_final2"] = full_kategori
-
-        # Options render:
-        pejabat_selected = _as_list(st.session_state.get("belanja_pejabat_final2", []))
-        df_parent_pejabat = _filter_df(df_slicer_base, {"PTJ": pejabat_selected})
-        opt_ptj = _unique_col(df_parent_pejabat, "PTJ1")
-
-        ptj_selected = _as_list(st.session_state.get("belanja_ptj_final2", []))
-        ptj_selected = [x for x in ptj_selected if x in set(opt_ptj)]
-        if not ptj_selected:
-            ptj_selected = opt_ptj
-            st.session_state["belanja_ptj_final2"] = ptj_selected
-
-        df_parent = _filter_df(df_parent_pejabat, {"PTJ1": ptj_selected})
-
-        kategori_selected = _as_list(st.session_state.get("belanja_kategori_final2", []))
-        kategori_selected = [x for x in kategori_selected if x in set(_unique_col(df_parent, "Kategori"))]
-        if not kategori_selected:
-            kategori_selected = _unique_col(df_parent, "Kategori")
-            st.session_state["belanja_kategori_final2"] = kategori_selected
-
-        # Item/Kod options refer Kategori.
-        # Item boleh clear = All Item.
-        # Kod Item boleh clear = All Kod Item.
-        # Kod Item options ikut Kategori & Item jika Item dipilih.
-        item_selected = _as_list(st.session_state.get("belanja_item_final2", []))
-        kod_selected = _as_list(st.session_state.get("belanja_kod_item_final2", []))
-
-        df_by_kategori = _filter_df(df_parent, {"Kategori": kategori_selected})
-
-        opt_item = _unique_col(df_by_kategori, "DESC")
-        item_selected = [x for x in item_selected if x in set(opt_item)]
-        st.session_state["belanja_item_final2"] = item_selected
-
-        # Kod Item options refer kepada Item.
-        # Jika Item kosong, fallback kepada Kategori supaya options masih wujud.
-        df_for_kod_options = (
-            _filter_df(df_parent, {"DESC": item_selected})
-            if item_selected
-            else df_by_kategori
+        _render_pill_slicer(
+            "📂 Pilih Kategori",
+            "Kategori",
+            "belanja_kategori_final2",
+            "belanja_kategori_pills_tick",
+            df_slicer_base
         )
 
-        opt_kod = _unique_col(df_for_kod_options, "KOD1")
-        kod_selected = [x for x in kod_selected if x in set(opt_kod)]
-
-        # Jika Item ada selected tetapi Kod Item kosong/stale,
-        # auto pilih semua Kod Item yang berkaitan dengan Item selected.
-        if item_selected and not kod_selected:
-            kod_selected = opt_kod
-
-        st.session_state["belanja_kod_item_final2"] = kod_selected
-
-        # Susunan slicer:
-        # Kategori -> Pejabat -> PTJ -> Item -> Kod Item
-        st.multiselect(
-            "Pilih Kategori",
-            _unique_col(df_parent, "Kategori"),
-            key="belanja_kategori_final2",
-            on_change=_sync_from_kategori,
-            placeholder="Pilih Kategori"
+        _render_pill_slicer(
+            "🏢 Pilih Pejabat",
+            "PTJ",
+            "belanja_pejabat_final2",
+            "belanja_pejabat_pills_tick",
+            df_slicer_base
         )
 
-        st.multiselect(
-            "Pilih Pejabat",
-            full_pejabat,
-            key="belanja_pejabat_final2",
-            on_change=_sync_from_pejabat,
-            placeholder="Pilih Pejabat"
-        )
-
-        # PTJ Pills - boleh pilih banyak PTJ tanpa Ctrl.
-        def _sync_from_ptj_pills():
-            ptj_pills = _as_list(st.session_state.get("ptj_pills_multi_final2", []))
-
-            if not ptj_pills:
-                return
-
-            df_base_pills = _base_df()
-
-            pejabat_vals = _as_list(st.session_state.get("belanja_pejabat_final2", []))
-            if not pejabat_vals:
-                pejabat_vals = _unique_col(df_base_pills, "PTJ")
-
-            df_ptj_pills = _filter_df(
-                df_base_pills,
-                {
-                    "PTJ": pejabat_vals,
-                    "PTJ1": ptj_pills
-                }
-            )
-
-            if df_ptj_pills.empty:
-                return
-
-            # Add pills ke pilihan PTJ sedia ada.
-            current_ptj = _as_list(st.session_state.get("belanja_ptj_final2", []))
-            valid_ptj = _unique_col(df_ptj_pills, "PTJ1")
-            st.session_state["belanja_ptj_final2"] = sorted(
-                list(set(current_ptj + [x for x in ptj_pills if x in set(valid_ptj)]))
-            )
-
-            _set_child_slicers_preserve_kategori(df_ptj_pills)
-
-        opt_ptj_pills = _pills_unselected_options(
-            opt_ptj,
-            st.session_state.get("belanja_ptj_final2", [])
-        )
-
-        st.pills(
+        _render_pill_slicer(
             "⚡ Pilih PTJ",
-            options=opt_ptj_pills,
-            selection_mode="multi",
-            key="ptj_pills_multi_final2",
-            on_change=_sync_from_ptj_pills
+            "PTJ1",
+            "belanja_ptj_final2",
+            "belanja_ptj_pills_tick",
+            df_slicer_base
         )
 
-        st.multiselect(
-            "Pilih PTJ (Multi Select)",
-            opt_ptj,
-            key="belanja_ptj_final2",
-            on_change=_sync_from_ptj,
-            placeholder="Pilih PTJ"
+        _render_pill_slicer(
+            "🧾 Pilih Item",
+            "DESC",
+            "belanja_item_final2",
+            "belanja_item_pills_tick",
+            df_slicer_base
         )
 
-        # Item Pills - boleh pilih banyak item tanpa Ctrl.
-        def _sync_from_item_pills():
-            item_pills = _as_list(st.session_state.get("item_pills_multi_final2", []))
-
-            if not item_pills:
-                return
-
-            df_base_pills = _base_df()
-
-            kategori_pills = _as_list(st.session_state.get("belanja_kategori_final2", []))
-            if not kategori_pills:
-                kategori_pills = _unique_col(df_base_pills, "Kategori")
-
-            df_item_pills = _filter_df(
-                df_base_pills,
-                {
-                    "Kategori": kategori_pills,
-                    "DESC": item_pills
-                }
-            )
-
-            if df_item_pills.empty:
-                return
-
-            current_item = _as_list(st.session_state.get("belanja_item_final2", []))
-            st.session_state["belanja_item_final2"] = sorted(
-                list(set(current_item + item_pills))
-            )
-
-            if not st.session_state.get("belanja_lock_kod_item", False):
-                st.session_state["belanja_kod_item_final2"] = _unique_col(df_item_pills, "KOD1")
-
-            if not st.session_state.get("belanja_lock_pejabat", False):
-                st.session_state["belanja_pejabat_final2"] = _unique_col(df_item_pills, "PTJ")
-
-            if not st.session_state.get("belanja_lock_ptj", False):
-                st.session_state["belanja_ptj_final2"] = _unique_col(df_item_pills, "PTJ1")
-
-            if not st.session_state.get("belanja_lock_kategori", False):
-                st.session_state["belanja_kategori_final2"] = _unique_col(df_item_pills, "Kategori")
-
-        opt_item_pills = _pills_unselected_options(
-            opt_item,
-            st.session_state.get("belanja_item_final2", [])
+        _render_pill_slicer(
+            "🔢 Pilih Kod Item",
+            "KOD1",
+            "belanja_kod_item_final2",
+            "belanja_kod_item_pills_tick",
+            df_slicer_base
         )
 
-        st.pills(
-            "⚡ Pilih Item",
-            options=opt_item_pills,
-            selection_mode="multi",
-            key="item_pills_multi_final2",
-            on_change=_sync_from_item_pills
+        active_count = sum(
+            1 for vals in _get_belanja_filter_state().values()
+            if _as_list(vals)
         )
-
-        st.multiselect(
-            "Pilih Item (Multi Select)",
-            opt_item,
-            key="belanja_item_final2",
-            on_change=_sync_from_item,
-            placeholder="Semua Item"
-        )
-
-        # Kod Item Pills - boleh pilih banyak kod tanpa Ctrl.
-        def _sync_from_kod_pills():
-            kod_pills = _as_list(st.session_state.get("kod_pills_multi_final2", []))
-
-            if not kod_pills:
-                return
-
-            df_base_pills = _base_df()
-
-            item_vals = _as_list(st.session_state.get("belanja_item_final2", []))
-            kategori_vals = _as_list(st.session_state.get("belanja_kategori_final2", []))
-
-            filters = {"KOD1": kod_pills}
-            if item_vals:
-                filters["DESC"] = item_vals
-            elif kategori_vals:
-                filters["Kategori"] = kategori_vals
-
-            df_kod_pills = _filter_df(df_base_pills, filters)
-
-            if df_kod_pills.empty:
-                return
-
-            current_kod = _as_list(st.session_state.get("belanja_kod_item_final2", []))
-            st.session_state["belanja_kod_item_final2"] = sorted(
-                list(set(current_kod + kod_pills))
-            )
-
-            if not st.session_state.get("belanja_lock_item", False):
-                st.session_state["belanja_item_final2"] = _unique_col(df_kod_pills, "DESC")
-
-            if not st.session_state.get("belanja_lock_pejabat", False):
-                st.session_state["belanja_pejabat_final2"] = _unique_col(df_kod_pills, "PTJ")
-
-            if not st.session_state.get("belanja_lock_ptj", False):
-                st.session_state["belanja_ptj_final2"] = _unique_col(df_kod_pills, "PTJ1")
-
-            if not st.session_state.get("belanja_lock_kategori", False):
-                st.session_state["belanja_kategori_final2"] = _unique_col(df_kod_pills, "Kategori")
-
-        opt_kod_pills = _pills_unselected_options(
-            opt_kod,
-            st.session_state.get("belanja_kod_item_final2", [])
-        )
-
-        st.pills(
-            "⚡ Pilih Kod Item",
-            options=opt_kod_pills,
-            selection_mode="multi",
-            key="kod_pills_multi_final2",
-            on_change=_sync_from_kod_pills
-        )
-
-        st.multiselect(
-            "Pilih Kod Item (Multi Select)",
-            opt_kod,
-            key="belanja_kod_item_final2",
-            on_change=_sync_from_kod_item,
-            placeholder="Semua Kod Item"
-        )
+        st.caption(f"Filter aktif: {active_count}/5")
 
         if st.button("♻️ Reset Slicer Belanja & Hasil", key="reset_slicer_belanja_final2"):
             for key in [
@@ -1644,6 +1305,12 @@ if menu == "1. Belanja & Hasil":
                 "belanja_kategori_final2",
                 "belanja_item_final2",
                 "belanja_kod_item_final2",
+                "belanja_kategori_pills_tick",
+                "belanja_pejabat_pills_tick",
+                "belanja_ptj_pills_tick",
+                "belanja_item_pills_tick",
+                "belanja_kod_item_pills_tick",
+                "belanja_final2_slicer_initialized",
                 "ptj_pills_multi_final2",
                 "item_pills_multi_final2",
                 "kod_pills_multi_final2",
@@ -1652,13 +1319,6 @@ if menu == "1. Belanja & Hasil":
                 "belanja_lock_ptj",
                 "belanja_lock_item",
                 "belanja_lock_kod_item",
-                "belanja_final2_slicer_initialized",
-                "belanja_pejabat_final",
-                "belanja_ptj_final",
-                "belanja_kategori_final",
-                "belanja_item_final",
-                "belanja_kod_item_final",
-                "belanja_final_slicer_initialized",
             ]:
                 if key in st.session_state:
                     del st.session_state[key]
@@ -1670,44 +1330,19 @@ if menu == "1. Belanja & Hasil":
     pilih_desc = _as_list(st.session_state.get("belanja_item_final2", []))
     pilih_kod1 = _as_list(st.session_state.get("belanja_kod_item_final2", []))
 
-    # Mandatory safety.
-    if not pilih_ptj:
-        pilih_ptj = _unique_col(df_tapis, "PTJ")
-        st.session_state["belanja_pejabat_final2"] = pilih_ptj
+    active_filters_final = {
+        "Kategori": pilih_kategori,
+        "PTJ": pilih_ptj,
+        "PTJ1": pilih_ptj1,
+        "DESC": pilih_desc,
+        "KOD1": pilih_kod1,
+    }
 
-    df_tapis = df_tapis[
-        df_tapis["PTJ"].astype(str).isin(pilih_ptj)
-    ].copy()
-
-    opt_ptj_final = _unique_col(df_tapis, "PTJ1")
-    if not pilih_ptj1:
-        pilih_ptj1 = opt_ptj_final
-        st.session_state["belanja_ptj_final2"] = pilih_ptj1
-
-    df_tapis = df_tapis[
-        df_tapis["PTJ1"].astype(str).isin(pilih_ptj1)
-    ].copy()
-
-    opt_kategori_final = _unique_col(df_tapis, "Kategori")
-    if not pilih_kategori:
-        pilih_kategori = opt_kategori_final
-        st.session_state["belanja_kategori_final2"] = pilih_kategori
-
-    df_tapis = df_tapis[
-        df_tapis["Kategori"].astype(str).isin(pilih_kategori)
-    ].copy()
-
-    # Item boleh clear = All Item.
-    if pilih_desc:
-        df_tapis = df_tapis[
-            df_tapis["DESC"].astype(str).isin(pilih_desc)
-        ].copy()
-
-    # Kod Item boleh clear = All Kod Item, dan refer Item.
-    if pilih_kod1:
-        df_tapis = df_tapis[
-            df_tapis["KOD1"].astype(str).isin(pilih_kod1)
-        ].copy()
+    # Empty selection = ALL.
+    df_tapis = _filter_df(
+        df_tapis,
+        active_filters_final
+    )
 
     if df_tapis.empty:
         st.warning("Tiada data selepas tapisan dibuat.")
@@ -1841,16 +1476,139 @@ if menu == "1. Belanja & Hasil":
         """)
 
     with col4:
-        html(f"""
-        <div style="text-align:center; padding-top:15px;">
-            <h1 style="margin:0;color:#2c3e50;font-size:2.2em;">{total}</h1>
-            <h5 style="margin:0;color:#2c3e50;">Jumlah PTJ</h5>
-            <hr style="margin:8px 0;">
-            <p style="margin:3px 0;"><strong>SASARAN</strong> {sasaran_int}%</p>
-            <p style="margin:3px 0;"><strong>PRESTASI</strong> {prestasi_int}%</p>
-            <h3 style="color:#27ae60;">PENCAPAIAN {pencapaian_int}%</h3>
-        </div>
-        """)
+        # Render bahagian ini melalui Streamlit component supaya tag HTML
+        # tidak terpapar sebagai text di dashboard.
+        components.html(
+            f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    html, body {{
+                        margin: 0;
+                        padding: 0;
+                        background: transparent;
+                        font-family: Arial, sans-serif;
+                        overflow: visible;
+                    }}
+
+                    .formula-box {{
+                        text-align: center;
+                        padding-top: 15px;
+                        color: #2c3e50;
+                    }}
+
+                    .formula-box h1 {{
+                        margin: 0;
+                        color: #2c3e50;
+                        font-size: 2.2em;
+                        line-height: 1.1;
+                    }}
+
+                    .formula-box h5 {{
+                        margin: 0;
+                        color: #2c3e50;
+                        font-size: 0.83em;
+                        line-height: 1.2;
+                    }}
+
+                    .formula-box hr {{
+                        margin: 8px auto;
+                        border: 0;
+                        border-top: 1px solid rgba(148,163,184,0.45);
+                        width: 88%;
+                    }}
+
+                    .formula-line {{
+                        margin: 3px 0;
+                        color: #2c3e50;
+                        font-size: 16px;
+                        line-height: 1.25;
+                    }}
+
+                    .formula-highlight {{
+                        color: #27ae60;
+                        margin: 12px 0 0 0;
+                        font-size: 1.17em;
+                        line-height: 1.25;
+                    }}
+
+                    .hover-formula {{
+                        position: relative;
+                        display: inline-block;
+                        cursor: help;
+                        border-bottom: 1px dotted rgba(44, 62, 80, 0.55);
+                    }}
+
+                    .hover-formula::after {{
+                        content: attr(data-tooltip);
+                        position: absolute;
+                        left: 50%;
+                        bottom: 135%;
+                        transform: translateX(-50%);
+                        background: rgba(15, 23, 42, 0.96);
+                        color: white;
+                        padding: 7px 10px;
+                        border-radius: 9px;
+                        font-size: 12px;
+                        font-weight: 600;
+                        white-space: nowrap;
+                        box-shadow: 0 8px 22px rgba(0,0,0,0.25);
+                        opacity: 0;
+                        pointer-events: none;
+                        transition: opacity 0.18s ease;
+                        z-index: 999999;
+                    }}
+
+                    .hover-formula::before {{
+                        content: "";
+                        position: absolute;
+                        left: 50%;
+                        bottom: 118%;
+                        transform: translateX(-50%);
+                        border: 6px solid transparent;
+                        border-top-color: rgba(15, 23, 42, 0.96);
+                        opacity: 0;
+                        transition: opacity 0.18s ease;
+                        z-index: 999998;
+                    }}
+
+                    .hover-formula:hover::after,
+                    .hover-formula:hover::before {{
+                        opacity: 1;
+                    }}
+                </style>
+            </head>
+            <body>
+                <div class="formula-box">
+                    <h1>{total}</h1>
+                    <h5>Jumlah PTJ</h5>
+                    <hr>
+
+                    <p class="formula-line">
+                        <span class="hover-formula" data-tooltip="Formula: Bajet Qtr / Bajet Tahunan">
+                            <strong>SASARAN</strong> {sasaran_int}%
+                        </span>
+                    </p>
+
+                    <p class="formula-line">
+                        <span class="hover-formula" data-tooltip="Formula: Sebenar / Bajet Tahunan">
+                            <strong>PRESTASI</strong> {prestasi_int}%
+                        </span>
+                    </p>
+
+                    <h3 class="formula-highlight">
+                        <span class="hover-formula" data-tooltip="Formula: Prestasi / Sasaran">
+                            PENCAPAIAN {pencapaian_int}%
+                        </span>
+                    </h3>
+                </div>
+            </body>
+            </html>
+            """,
+            height=180,
+            scrolling=False,
+        )
 
     if st.session_state.show_drill_belanja:
         st.subheader(st.session_state.drill_title_belanja)
@@ -2005,11 +1763,19 @@ if menu == "1. Belanja & Hasil":
                 text=df_total_chart["Jumlah Sebenar"].apply(format_nilai)
             )
 
-            warna_carta2 = ["#E08E4E", "#2E8B6D"]
+            warna_carta2 = ["#9CA3AF", "#2E8B6D"]
 
             fig_total.update_traces(
                 marker_color=warna_carta2,
                 text=df_total_chart["Jumlah Sebenar"].apply(format_nilai)
+            )
+
+            # DOTTED untuk bar tahun sebelum (03-2025)
+            fig_total.update_traces(
+                marker_pattern_shape=[".", ""],
+                marker_pattern_fgcolor=["white", "rgba(0,0,0,0)"],
+                marker_pattern_size=[7, 0],
+                marker_pattern_solidity=[0.25, 0]
             )
 
             apply_chart_text_style(fig_total, size=12, angle=0)
@@ -2165,7 +1931,7 @@ if menu == "1. Belanja & Hasil":
 
 
 
-    with st.expander("📊 CARTA 4: BY KOD ITEM", expanded=False):
+    with st.expander("📊 CARTA 4: KOD ITEM", expanded=False):
         df_by_kod_item = (
             df_akhir.groupby(["KOD1"], as_index=False)
             .agg({
@@ -2235,7 +2001,7 @@ if menu == "1. Belanja & Hasil":
         )
 
         fig_by_kod_item.update_layout(
-            title="Carta By Kod Item - Sebenar",
+            title=" ",
             yaxis=dict(
                 categoryorder="array",
                 categoryarray=df_by_kod_item["KOD1"].tolist()
@@ -2262,287 +2028,7 @@ if menu == "1. Belanja & Hasil":
 
         st.plotly_chart(fig_by_kod_item, use_container_width=True)
 
-    with st.expander("📈 CARTA 5: PRESTASI  PTJ", expanded=False):
-        # Formula Carta 5:
-        # % Prestasi   = SEBENAR / BAJET
-        # % Sasaran    = SASARAN / BAJET
-        # % Pencapaian = SEBENAR / SASARAN
-        #
-        # Rule DIV/0:
-        # - Jika BAJET kosong/0, Prestasi dan Sasaran tidak dikira.
-        # - Jika SASARAN kosong/0, Pencapaian tidak dikira.
-        # - Papar #DIV/0! sahaja, bukan 0% atau nilai melampau.
-
-        df_c3 = df_group.copy()
-
-        # Pastikan numeric.
-        df_c3["BAJET 2025"] = pd.to_numeric(
-            df_c3["BAJET 2025"],
-            errors="coerce"
-        ).fillna(0)
-
-        df_c3["SASARAN Q1-25"] = pd.to_numeric(
-            df_c3["SASARAN Q1-25"],
-            errors="coerce"
-        ).fillna(0)
-
-        df_c3["SEBENAR Q1-25"] = pd.to_numeric(
-            df_c3["SEBENAR Q1-25"],
-            errors="coerce"
-        ).fillna(0)
-
-        # Flag divide by zero.
-        df_c3["Is_DIV0_Bajet"] = df_c3["BAJET 2025"] <= 0
-        df_c3["Is_DIV0_Sasaran"] = df_c3["SASARAN Q1-25"] <= 0
-
-        # Kiraan sebenar.
-        df_c3["% Prestasi"] = df_c3.apply(
-            lambda row: None
-            if row["Is_DIV0_Bajet"]
-            else hitung_prestasi(row["SEBENAR Q1-25"], row["BAJET 2025"]),
-            axis=1
-        )
-
-        df_c3["% Sasaran"] = df_c3.apply(
-            lambda row: None
-            if row["Is_DIV0_Bajet"]
-            else hitung_prestasi(row["SASARAN Q1-25"], row["BAJET 2025"]),
-            axis=1
-        )
-
-        df_c3["% Pencapaian"] = df_c3.apply(
-            lambda row: None
-            if row["Is_DIV0_Sasaran"]
-            else hitung_prestasi(row["SEBENAR Q1-25"], row["SASARAN Q1-25"]),
-            axis=1
-        )
-
-        # Display value untuk chart.
-        # None akan sembunyikan bar/line supaya tidak nampak 0%.
-        df_c3["% Prestasi_Display"] = df_c3["% Prestasi"]
-        df_c3["% Sasaran_Display"] = df_c3["% Sasaran"]
-        df_c3["% Pencapaian_Display"] = df_c3["% Pencapaian"]
-
-        # Label.
-        df_c3["Label Prestasi"] = df_c3.apply(
-            lambda row: "#DIV/0!"
-            if row["Is_DIV0_Bajet"]
-            else f'{int(round(row["% Prestasi"]))}%',
-            axis=1
-        )
-
-        df_c3["Label Sasaran"] = df_c3.apply(
-            lambda row: "#DIV/0!"
-            if row["Is_DIV0_Bajet"]
-            else f'{int(round(row["% Sasaran"]))}%',
-            axis=1
-        )
-
-        df_c3["Label Pencapaian"] = df_c3.apply(
-            lambda row: "#DIV/0!"
-            if row["Is_DIV0_Sasaran"]
-            else f'{int(round(row["% Pencapaian"]))}%',
-            axis=1
-        )
-
-        # Susun ikut pencapaian tertinggi.
-        # DIV/0 diletakkan bawah sekali.
-        df_c3["_sort_pencapaian"] = pd.to_numeric(
-            df_c3["% Pencapaian"],
-            errors="coerce"
-        ).fillna(-1)
-
-        df_c3 = df_c3.sort_values(
-            by="_sort_pencapaian",
-            ascending=False
-        ).reset_index(drop=True)
-
-        left_y_max_value = 0
-        right_y_max_value = 0
-
-        if not df_c3.empty:
-            valid_left_values = pd.concat([
-                pd.to_numeric(df_c3["% Prestasi"], errors="coerce"),
-                pd.to_numeric(df_c3["% Sasaran"], errors="coerce")
-            ]).dropna()
-
-            if not valid_left_values.empty:
-                left_y_max_value = valid_left_values.max()
-
-            valid_right_values = pd.to_numeric(
-                df_c3["% Pencapaian"],
-                errors="coerce"
-            ).dropna()
-
-            if not valid_right_values.empty:
-                right_y_max_value = valid_right_values.max()
-
-        left_y_max = max(
-            40,
-            int(left_y_max_value) + 10 if left_y_max_value > 0 else 40
-        )
-
-        right_y_max = max(
-            140,
-            int(right_y_max_value) + 20 if right_y_max_value > 0 else 140
-        )
-
-        fig3 = go.Figure()
-
-        # Bar Prestasi - Axis kiri.
-        fig3.add_trace(go.Bar(
-            x=df_c3["PTJ1"],
-            y=df_c3["% Prestasi_Display"],
-            name="Prestasi (Sebenar/Bajet)",
-            marker_color="#8ED04F",
-            text=df_c3.apply(
-                lambda row: ""
-                if row["Is_DIV0_Bajet"]
-                else row["Label Prestasi"],
-                axis=1
-            ),
-            textposition="inside",
-            insidetextanchor="middle",
-            textfont=dict(
-                size=12,
-                color="black",
-                family="Arial"
-            ),
-            yaxis="y",
-            hovertemplate=(
-                "<b>%{x}</b><br>"
-                "Prestasi: %{y:.2f}%<br>"
-                "<extra></extra>"
-            )
-        ))
-
-        # Line Sasaran - Axis kiri.
-        fig3.add_trace(go.Scatter(
-            x=df_c3["PTJ1"],
-            y=df_c3["% Sasaran_Display"],
-            name="Sasaran (Sasaran/Bajet)",
-            line=dict(color="#FFB000", width=3, dash="dash"),
-            marker=dict(size=7),
-            mode="lines+markers+text",
-            text=df_c3.apply(
-                lambda row: ""
-                if row["Is_DIV0_Bajet"]
-                else row["Label Sasaran"],
-                axis=1
-            ),
-            textposition="top center",
-            textfont=dict(
-                size=11,
-                color="black",
-                family="Arial"
-            ),
-            yaxis="y",
-            hovertemplate=(
-                "<b>%{x}</b><br>"
-                "Sasaran: %{y:.2f}%<br>"
-                "<extra></extra>"
-            )
-        ))
-
-        # Line Pencapaian - Axis kanan sahaja.
-        fig3.add_trace(go.Scatter(
-            x=df_c3["PTJ1"],
-            y=df_c3["% Pencapaian_Display"],
-            name="Pencapaian (Sebenar/Sasaran)",
-            line=dict(color="red", width=4),
-            marker=dict(size=7),
-            mode="lines+markers+text",
-            text=df_c3.apply(
-                lambda row: ""
-                if row["Is_DIV0_Sasaran"]
-                else row["Label Pencapaian"],
-                axis=1
-            ),
-            textposition="top center",
-            textfont=dict(
-                size=11,
-                color="black",
-                family="Arial"
-            ),
-            yaxis="y2",
-            hovertemplate=(
-                "<b>%{x}</b><br>"
-                "Pencapaian: %{y:.2f}%<br>"
-                "<extra></extra>"
-            )
-        ))
-
-        # Manual annotation #DIV/0!.
-        # Jika Bajet 0, letak annotation untuk Prestasi/Sasaran.
-        # Jika Sasaran 0, letak annotation untuk Pencapaian.
-        div0_rows = df_c3[
-            (df_c3["Is_DIV0_Bajet"]) |
-            (df_c3["Is_DIV0_Sasaran"])
-        ].copy()
-
-        for _, row in div0_rows.iterrows():
-            fig3.add_annotation(
-                x=row["PTJ1"],
-                y=max(left_y_max * 0.06, 2),
-                text="#DIV/0!",
-                showarrow=False,
-                yref="y",
-                font=dict(
-                    size=12,
-                    color="black",
-                    family="Arial"
-                ),
-                bgcolor="rgba(255,255,255,0.90)",
-                bordercolor="rgba(0,0,0,0.25)",
-                borderwidth=1,
-                borderpad=2
-            )
-
-        fig3.update_layout(
-            height=780,
-            xaxis=dict(
-                title="PTJ",
-                tickangle=-45,
-                automargin=True
-            ),
-            yaxis=dict(
-                title="Prestasi & Sasaran (%)",
-                range=[0, left_y_max],
-                ticksuffix="%",
-                showgrid=True,
-                zeroline=True
-            ),
-            yaxis2=dict(
-                title="Pencapaian (%)",
-                range=[0, right_y_max],
-                ticksuffix="%",
-                overlaying="y",
-                side="right",
-                showgrid=False,
-                zeroline=False
-            ),
-            legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=-0.28,
-                xanchor="center",
-                x=0.5
-            ),
-            template="plotly_white",
-            margin=dict(t=120, b=180, l=80, r=90),
-            uniformtext_minsize=8,
-            uniformtext_mode="show"
-        )
-
-        fig3.update_traces(
-            cliponaxis=False
-        )
-
-        st.plotly_chart(fig3, use_container_width=True)
-
-
-    
-    with st.expander("📈 CARTA 6: PRESTASI PTJ (JUMLAH SEBENAR)", expanded=False):
+    with st.expander("📈 CARTA 5: PRESTASI PTJ", expanded=False):
 
         df_c6 = df_group.copy()
 
@@ -3929,9 +3415,9 @@ elif menu == "3. P&L":
             color="JENIS",
             color_discrete_map={
                 "BAJET 2026": "#d9534f",
-                "BAJET 03-2026": "#a8d5a2",
+                "BAJET 03-2026": "#F59E0B",
                 "SEBENAR 03-2026": "#2e8b57",
-                "SEBENAR 03-2025": "#5cb85c"
+                "SEBENAR 03-2025": "#9CA3AF"
             },
             labels={
                 "JENIS": "",
@@ -3972,6 +3458,15 @@ elif menu == "3. P&L":
             uniformtext_mode="show"
         )
 
+        # DOTTED untuk SEBENAR 03-2025
+        fig_surplus_termasuk.update_traces(
+            marker_pattern_shape=".",
+            marker_pattern_fgcolor="white",
+            marker_pattern_size=7,
+            marker_pattern_solidity=0.25,
+            selector=dict(name="SEBENAR 03-2025")
+        )
+
         st.plotly_chart(
             fig_surplus_termasuk,
             use_container_width=True
@@ -4002,9 +3497,9 @@ elif menu == "3. P&L":
             color="JENIS",
             color_discrete_map={
                 "BAJET 2026": "#d9534f",
-                "BAJET 03-2026": "#a8d5a2",
+                "BAJET 03-2026": "#F59E0B",
                 "SEBENAR 03-2026": "#2e8b57",
-                "SEBENAR 03-2025": "#5cb85c"
+                "SEBENAR 03-2025": "#9CA3AF"
             },
             labels={
                 "JENIS": "",
@@ -4036,6 +3531,15 @@ elif menu == "3. P&L":
             ],
             uniformtext_minsize=7,
             uniformtext_mode="show"
+        )
+
+        # DOTTED untuk SEBENAR 03-2025
+        fig_surplus.update_traces(
+            marker_pattern_shape=".",
+            marker_pattern_fgcolor="white",
+            marker_pattern_size=7,
+            marker_pattern_solidity=0.25,
+            selector=dict(name="SEBENAR 03-2025")
         )
 
         st.plotly_chart(fig_surplus, use_container_width=True)
