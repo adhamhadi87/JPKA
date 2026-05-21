@@ -11,7 +11,8 @@ import streamlit.components.v1 as components
 # =======================
 st.set_page_config(
     page_title="PRESTASI PERBELANJAAN DAN HASIL CIDB",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 
@@ -1171,6 +1172,10 @@ if menu == "1. Belanja & Hasil":
         new_selected = sorted(list(selected_set))
         st.session_state[selected_key] = new_selected
 
+        # Kekalkan expander filter ini terbuka selepas pill diklik.
+        # Tanpa ini, Streamlit rerun akan tutup balik filter.
+        st.session_state[f"{selected_key}_expanded"] = True
+
         # Clear temporary clicked pills supaya boleh klik semula.
         st.session_state[pill_key] = []
 
@@ -1196,7 +1201,12 @@ if menu == "1. Belanja & Hasil":
         else:
             expander_title = f"{title}  🌐 All ({len(options)})"
 
-        with st.expander(expander_title, expanded=False):
+        expanded_key = f"{selected_key}_expanded"
+
+        with st.expander(
+            expander_title,
+            expanded=st.session_state.get(expanded_key, False)
+        ):
             if current_selected:
                 st.caption(f"Selected: {len(current_selected)} / {len(options)}")
             else:
@@ -1310,6 +1320,11 @@ if menu == "1. Belanja & Hasil":
                 "belanja_ptj_pills_tick",
                 "belanja_item_pills_tick",
                 "belanja_kod_item_pills_tick",
+                "belanja_kategori_final2_expanded",
+                "belanja_pejabat_final2_expanded",
+                "belanja_ptj_final2_expanded",
+                "belanja_item_final2_expanded",
+                "belanja_kod_item_final2_expanded",
                 "belanja_final2_slicer_initialized",
                 "ptj_pills_multi_final2",
                 "item_pills_multi_final2",
