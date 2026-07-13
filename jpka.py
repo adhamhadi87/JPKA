@@ -639,6 +639,160 @@ section[data-testid="stSidebar"] {
 </style>
 """)
 
+
+
+# =========================================================
+# FINAL OVERRIDE: TRAFFIC LIGHT JPKA + CLICKABLE JUMLAH PTJ
+# Diletakkan selepas CSS umum supaya warna tidak ditindih
+# oleh style global .stButton button berwarna biru.
+# =========================================================
+st.markdown("""
+<style>
+/* Pastikan ketiga-tiga butang traffic light kekal bulat dan berwarna */
+div[class*="st-key-btn_jpka_hijau"],
+div[class*="st-key-btn_jpka_kuning"],
+div[class*="st-key-btn_jpka_merah"] {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+div[class*="st-key-btn_jpka_hijau"] button,
+div[class*="st-key-btn_jpka_kuning"] button,
+div[class*="st-key-btn_jpka_merah"] button {
+    width: 138px !important;
+    height: 138px !important;
+    min-height: 138px !important;
+    max-width: 138px !important;
+    border-radius: 50% !important;
+    margin: 10px auto !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 4px solid rgba(255,255,255,0.42) !important;
+    cursor: pointer !important;
+    transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+}
+
+div[class*="st-key-btn_jpka_hijau"] button {
+    color: #ffffff !important;
+    background: radial-gradient(circle at 30% 25%, #9dffad 0%, #2ee45a 42%, #07912b 100%) !important;
+    box-shadow:
+        0 0 18px rgba(46,228,90,0.62),
+        0 0 38px rgba(46,228,90,0.38),
+        0 16px 30px rgba(0,0,0,0.22),
+        inset 0 9px 13px rgba(255,255,255,0.30),
+        inset 0 -14px 20px rgba(0,0,0,0.28) !important;
+    text-shadow: 0 3px 4px rgba(0,0,0,0.45), 0 0 12px rgba(255,255,255,0.28) !important;
+}
+
+div[class*="st-key-btn_jpka_kuning"] button {
+    color: #263042 !important;
+    background: radial-gradient(circle at 30% 25%, #fff9b5 0%, #f6d21e 43%, #b98a00 100%) !important;
+    box-shadow:
+        0 0 18px rgba(246,210,30,0.64),
+        0 0 38px rgba(246,210,30,0.38),
+        0 16px 30px rgba(0,0,0,0.22),
+        inset 0 9px 13px rgba(255,255,255,0.42),
+        inset 0 -14px 20px rgba(0,0,0,0.20) !important;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.72), 0 3px 4px rgba(0,0,0,0.28) !important;
+}
+
+div[class*="st-key-btn_jpka_merah"] button {
+    color: #ffffff !important;
+    background: radial-gradient(circle at 30% 25%, #ffaaaa 0%, #f04a42 42%, #a51218 100%) !important;
+    box-shadow:
+        0 0 18px rgba(240,74,66,0.64),
+        0 0 38px rgba(240,74,66,0.38),
+        0 16px 26px rgba(0,0,0,0.22),
+        inset 0 9px 13px rgba(255,255,255,0.28),
+        inset 0 -14px 20px rgba(0,0,0,0.30) !important;
+    text-shadow: 0 3px 4px rgba(0,0,0,0.45), 0 0 12px rgba(255,255,255,0.25) !important;
+}
+
+div[class*="st-key-btn_jpka_hijau"] button:hover,
+div[class*="st-key-btn_jpka_kuning"] button:hover,
+div[class*="st-key-btn_jpka_merah"] button:hover {
+    transform: translateY(-4px) scale(1.035) !important;
+    border-color: rgba(255,255,255,0.82) !important;
+}
+
+div[class*="st-key-btn_jpka_hijau"] button p,
+div[class*="st-key-btn_jpka_kuning"] button p,
+div[class*="st-key-btn_jpka_merah"] button p {
+    font-size: 44px !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: inherit !important;
+}
+
+/* Jumlah PTJ sebagai nombor clickable tanpa rupa button biasa */
+div[class*="st-key-btn_jumlah_ptj_jpka"] button {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #2c3e50 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    width: auto !important;
+    padding: 0 !important;
+    margin: 0 auto 2px auto !important;
+    display: block !important;
+    text-align: center !important;
+}
+
+div[class*="st-key-btn_jumlah_ptj_jpka"] button:hover {
+    color: #2563eb !important;
+    transform: scale(1.05) !important;
+    text-decoration: underline !important;
+    border: none !important;
+}
+
+div[class*="st-key-btn_jumlah_ptj_jpka"] button p {
+    font-size: 46px !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.jpka-total-label {
+    text-align: center;
+    color: #2c3e50;
+    font-size: 15px;
+    font-weight: 900;
+    margin-bottom: 10px;
+}
+.jpka-total-divider {
+    border-top: 1px solid rgba(148,163,184,0.50);
+    width: 88%;
+    margin: 8px auto 10px auto;
+}
+.jpka-formula-line {
+    text-align: center;
+    margin: 4px 0;
+    color: #2c3e50;
+    font-size: 16px;
+    line-height: 1.25;
+}
+.jpka-formula-highlight {
+    text-align: center;
+    color: #27ae60;
+    margin: 14px 0 0 0;
+    font-size: 19px;
+    line-height: 1.25;
+    font-weight: 900;
+}
+.jpka-total-wrap {
+    padding-top: 11px;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # =======================
 # FUNGSI UMUM
 # =======================
@@ -1683,139 +1837,26 @@ if menu == "1. Belanja & Hasil":
         """)
 
     with col4:
-        # Render bahagian ini melalui Streamlit component supaya tag HTML
-        # tidak terpapar sebagai text di dashboard.
-        components.html(
-            f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <style>
-                    html, body {{
-                        margin: 0;
-                        padding: 0;
-                        background: transparent;
-                        font-family: Arial, sans-serif;
-                        overflow: visible;
-                    }}
+        html('<div class="jpka-total-wrap">')
+        if st.button(f"{total}", key="btn_jumlah_ptj_jpka"):
+            st.session_state.show_drill_belanja = "semua"
+            st.session_state.drill_title_belanja = "Senarai Keseluruhan PTJ"
+            st.rerun()
 
-                    .formula-box {{
-                        text-align: center;
-                        padding-top: 15px;
-                        color: #2c3e50;
-                    }}
-
-                    .formula-box h1 {{
-                        margin: 0;
-                        color: #2c3e50;
-                        font-size: 2.2em;
-                        line-height: 1.1;
-                    }}
-
-                    .formula-box h5 {{
-                        margin: 0;
-                        color: #2c3e50;
-                        font-size: 0.83em;
-                        line-height: 1.2;
-                    }}
-
-                    .formula-box hr {{
-                        margin: 8px auto;
-                        border: 0;
-                        border-top: 1px solid rgba(148,163,184,0.45);
-                        width: 88%;
-                    }}
-
-                    .formula-line {{
-                        margin: 3px 0;
-                        color: #2c3e50;
-                        font-size: 16px;
-                        line-height: 1.25;
-                    }}
-
-                    .formula-highlight {{
-                        color: #27ae60;
-                        margin: 12px 0 0 0;
-                        font-size: 1.17em;
-                        line-height: 1.25;
-                    }}
-
-                    .hover-formula {{
-                        position: relative;
-                        display: inline-block;
-                        cursor: help;
-                        border-bottom: 1px dotted rgba(44, 62, 80, 0.55);
-                    }}
-
-                    .hover-formula::after {{
-                        content: attr(data-tooltip);
-                        position: absolute;
-                        left: 50%;
-                        bottom: 135%;
-                        transform: translateX(-50%);
-                        background: rgba(15, 23, 42, 0.96);
-                        color: white;
-                        padding: 7px 10px;
-                        border-radius: 9px;
-                        font-size: 12px;
-                        font-weight: 600;
-                        white-space: nowrap;
-                        box-shadow: 0 8px 22px rgba(0,0,0,0.25);
-                        opacity: 0;
-                        pointer-events: none;
-                        transition: opacity 0.18s ease;
-                        z-index: 999999;
-                    }}
-
-                    .hover-formula::before {{
-                        content: "";
-                        position: absolute;
-                        left: 50%;
-                        bottom: 118%;
-                        transform: translateX(-50%);
-                        border: 6px solid transparent;
-                        border-top-color: rgba(15, 23, 42, 0.96);
-                        opacity: 0;
-                        transition: opacity 0.18s ease;
-                        z-index: 999998;
-                    }}
-
-                    .hover-formula:hover::after,
-                    .hover-formula:hover::before {{
-                        opacity: 1;
-                    }}
-                </style>
-            </head>
-            <body>
-                <div class="formula-box">
-                    <h1>{total}</h1>
-                    <h5>Jumlah PTJ</h5>
-                    <hr>
-
-                    <p class="formula-line">
-                        <span class="hover-formula" data-tooltip="Formula: Bajet Qtr / Bajet Tahunan">
-                            <strong>SASARAN</strong> {sasaran_int}%
-                        </span>
-                    </p>
-
-                    <p class="formula-line">
-                        <span class="hover-formula" data-tooltip="Formula: Sebenar / Bajet Tahunan">
-                            <strong>PRESTASI</strong> {prestasi_int}%
-                        </span>
-                    </p>
-
-                    <h3 class="formula-highlight">
-                        <span class="hover-formula" data-tooltip="Formula: Prestasi / Sasaran">
-                            PENCAPAIAN {pencapaian_int}%
-                        </span>
-                    </h3>
-                </div>
-            </body>
-            </html>
-            """,
-            height=180,
-            scrolling=False,
-        )
+        html(f"""
+        <div class="jpka-total-label">Jumlah PTJ</div>
+        <div class="jpka-total-divider"></div>
+        <p class="jpka-formula-line" title="Formula: Bajet Qtr / Bajet Tahunan">
+            <strong>SASARAN</strong> {sasaran_int}%
+        </p>
+        <p class="jpka-formula-line" title="Formula: Sebenar / Bajet Tahunan">
+            <strong>PRESTASI</strong> {prestasi_int}%
+        </p>
+        <p class="jpka-formula-highlight" title="Formula: Prestasi / Sasaran">
+            PENCAPAIAN {pencapaian_int}%
+        </p>
+        </div>
+        """)
 
     if st.session_state.show_drill_belanja:
         st.subheader(st.session_state.drill_title_belanja)
@@ -1826,8 +1867,11 @@ if menu == "1. Belanja & Hasil":
                 (df_group["Prestasi_%"] >= 85) &
                 (df_group["Prestasi_%"] <= 94.99)
             ].sort_values("Prestasi_%", ascending=False)
-        else:
+        elif st.session_state.show_drill_belanja == "usaha":
             df_show = df_group[df_group["Prestasi_%"] < 85].sort_values("Prestasi_%", ascending=False)
+        else:
+            # Klik Jumlah PTJ: papar semua PTJ tanpa tapisan traffic light.
+            df_show = df_group.sort_values("Prestasi_%", ascending=False)
 
         if not df_show.empty:
             df_show_list = df_show[[
