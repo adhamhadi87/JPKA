@@ -233,7 +233,27 @@ html("""
 <style>
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
-.block-container {padding: 1rem 2rem;}
+
+/* Sembunyikan toolbar Streamlit: Share, star, edit, GitHub dan ruang kosong atas */
+header[data-testid="stHeader"] {
+    height: 0 !important;
+    min-height: 0 !important;
+    background: transparent !important;
+}
+[data-testid="stToolbar"],
+[data-testid="stDecoration"],
+[data-testid="stStatusWidget"],
+.stDeployButton {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+}
+
+/* Rapatkan kandungan betul-betul ke bahagian atas */
+.block-container {
+    padding: 0.25rem 2rem 2rem 2rem !important;
+    margin-top: 0 !important;
+}
 .card {
     background-color: #ffffff;
     border-left: 5px solid #2c3e50;
@@ -265,6 +285,116 @@ footer {visibility: hidden;}
     margin: 8px auto 6px;
     box-shadow: 0 6px 12px rgba(0,0,0,0.3);
 }
+
+
+/* =========================================================
+   CLICKABLE TRAFFIC LIGHT - GAYA DASHBOARD PRESTASI
+   Nombor dalam bulatan ialah button dan boleh ditekan.
+   ========================================================= */
+.traffic-range-jpka {
+    width: 100%;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 900;
+    color: #111827;
+    margin: 2px 0 4px 0;
+}
+
+.traffic-caption-jpka {
+    width: 100%;
+    text-align: center;
+    font-size: 17px;
+    font-weight: 900;
+    margin-top: 2px;
+}
+
+.st-key-btn_jpka_hijau button,
+.st-key-btn_jpka_kuning button,
+.st-key-btn_jpka_merah button {
+    width: 138px !important;
+    height: 138px !important;
+    min-height: 138px !important;
+    border-radius: 50% !important;
+    margin: 10px auto 10px auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 44px !important;
+    font-weight: 900 !important;
+    position: relative !important;
+    overflow: hidden !important;
+    border: 4px solid rgba(255,255,255,0.38) !important;
+    transition: all 0.18s ease-in-out !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+}
+
+.st-key-btn_jpka_hijau,
+.st-key-btn_jpka_kuning,
+.st-key-btn_jpka_merah {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+.st-key-btn_jpka_hijau button {
+    color: #ffffff !important;
+    background: radial-gradient(circle at 30% 25%, #9dffad 0%, #2ee45a 42%, #07912b 100%) !important;
+    box-shadow:
+        0 0 18px rgba(46,228,90,0.60),
+        0 0 38px rgba(46,228,90,0.36),
+        0 16px 30px rgba(0,0,0,0.22),
+        inset 0 9px 13px rgba(255,255,255,0.30),
+        inset 0 -14px 20px rgba(0,0,0,0.28) !important;
+    text-shadow: 0 3px 4px rgba(0,0,0,0.45), 0 0 12px rgba(255,255,255,0.28) !important;
+}
+
+.st-key-btn_jpka_kuning button {
+    color: #263042 !important;
+    background: radial-gradient(circle at 30% 25%, #fff9b5 0%, #f6d21e 43%, #b98a00 100%) !important;
+    box-shadow:
+        0 0 18px rgba(246,210,30,0.62),
+        0 0 38px rgba(246,210,30,0.36),
+        0 16px 30px rgba(0,0,0,0.22),
+        inset 0 9px 13px rgba(255,255,255,0.42),
+        inset 0 -14px 20px rgba(0,0,0,0.20) !important;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.70), 0 3px 4px rgba(0,0,0,0.28) !important;
+}
+
+.st-key-btn_jpka_merah button {
+    color: #ffffff !important;
+    background: radial-gradient(circle at 30% 25%, #ffaaaa 0%, #f04a42 42%, #a51218 100%) !important;
+    box-shadow:
+        0 0 18px rgba(240,74,66,0.62),
+        0 0 38px rgba(240,74,66,0.36),
+        0 16px 26px rgba(0,0,0,0.22),
+        inset 0 9px 13px rgba(255,255,255,0.28),
+        inset 0 -14px 20px rgba(0,0,0,0.30) !important;
+    text-shadow: 0 3px 4px rgba(0,0,0,0.45), 0 0 12px rgba(255,255,255,0.25) !important;
+}
+
+.st-key-btn_jpka_hijau button:hover,
+.st-key-btn_jpka_kuning button:hover,
+.st-key-btn_jpka_merah button:hover {
+    transform: translateY(-4px) scale(1.035) !important;
+    border: 4px solid rgba(255,255,255,0.76) !important;
+}
+
+.st-key-btn_jpka_hijau button:active,
+.st-key-btn_jpka_kuning button:active,
+.st-key-btn_jpka_merah button:active {
+    transform: translateY(4px) scale(0.98) !important;
+}
+
+.st-key-btn_jpka_hijau button p,
+.st-key-btn_jpka_kuning button p,
+.st-key-btn_jpka_merah button p {
+    font-size: 44px !important;
+    font-weight: 900 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
 .stApp {
     background: linear-gradient(135deg, #f5f7fa 0%, #e4e5e6 100%);
 }
@@ -283,7 +413,7 @@ footer {visibility: hidden;}
 
 /* Main page spacing */
 .block-container {
-    padding-top: 1.1rem !important;
+    padding-top: 0.25rem !important;
     padding-bottom: 2rem !important;
 }
 
@@ -1018,28 +1148,8 @@ df_geran, geran_error = load_data_geran()
 
 # =======================
 # MENU UTAMA DI MAIN PAGE
+# Tajuk besar dibuang kerana setiap modul sudah mempunyai subtajuk sendiri.
 # =======================
-html("""
-<div style="
-    text-align:center;
-    padding:18px 18px 10px 18px;
-    border-radius:24px;
-    background:rgba(255,255,255,0.55);
-    border:1px solid rgba(255,255,255,0.72);
-    margin-bottom:12px;
-    box-shadow:0 14px 34px rgba(15,23,42,0.10);
-    backdrop-filter:blur(16px);
-    -webkit-backdrop-filter:blur(16px);
-">
-    <div style="font-size:38px; line-height:1;">📊</div>
-    <h1 style="margin:8px 0 2px 0; font-weight:800; font-size:30px; color:#1e293b;">
-        PRESTASI KEWANGAN CIDB
-    </h1>
-    <p style="margin:0; color:#64748b; font-size:13px;">
-        Dashboard Prestasi Kewangan
-    </p>
-</div>
-""")
 
 menu_label = st.pills(
     "Pilih Modul",
@@ -1537,39 +1647,39 @@ if menu == "1. Belanja & Hasil":
         st.session_state.drill_title_belanja = ""
 
     with col1:
-        if st.button("🟢", key="hebat_btn"):
+        html("""
+        <div class="traffic-range-jpka">&gt; 95%</div>
+        """)
+        if st.button(f"{hebat}", key="btn_jpka_hijau"):
             st.session_state.show_drill_belanja = "hebat"
-            st.session_state.drill_title_belanja = "Senarai PTJ1 Hebat (> 95%)"
-        html(f"""
-        <div style="text-align:center">
-            <strong style="color:black; font-size:15px;">&gt; 95%</strong><br>
-            <div class="traffic-circle" style="background-color:#27ae60;">{hebat}</div>
-            <h4 style="color:#27ae60;">Hebat!</h4>
-        </div>
+            st.session_state.drill_title_belanja = "Senarai PTJ Hebat (> 95%)"
+            st.rerun()
+        html("""
+        <div class="traffic-caption-jpka" style="color:#07912b;">Hebat!</div>
         """)
 
     with col2:
-        if st.button("🟡", key="bagus_btn"):
+        html("""
+        <div class="traffic-range-jpka">85% - 94.99%</div>
+        """)
+        if st.button(f"{bagus}", key="btn_jpka_kuning"):
             st.session_state.show_drill_belanja = "bagus"
-            st.session_state.drill_title_belanja = "Senarai PTJ1 Bagus (85% - 94%)"
-        html(f"""
-        <div style="text-align:center">
-            <strong style="color:black; font-size:15px;">85% - 94%</strong><br>
-            <div class="traffic-circle" style="background-color:#f1c40f; color:#2c3e50;">{bagus}</div>
-            <h4 style="color:#f1c40f;">Bagus!</h4>
-        </div>
+            st.session_state.drill_title_belanja = "Senarai PTJ Bagus (85% - 94.99%)"
+            st.rerun()
+        html("""
+        <div class="traffic-caption-jpka" style="color:#b98a00;">Bagus!</div>
         """)
 
     with col3:
-        if st.button("🔴", key="usaha_btn"):
+        html("""
+        <div class="traffic-range-jpka">&lt; 85%</div>
+        """)
+        if st.button(f"{usaha}", key="btn_jpka_merah"):
             st.session_state.show_drill_belanja = "usaha"
-            st.session_state.drill_title_belanja = "Senarai PTJ1 Usaha Lagi (< 85%)"
-        html(f"""
-        <div style="text-align:center">
-            <strong style="color:black; font-size:15px;">&lt; 85%</strong><br>
-            <div class="traffic-circle" style="background-color:#e74c3c;">{usaha}</div>
-            <h4 style="color:#e74c3c;">Usaha lagi!</h4>
-        </div>
+            st.session_state.drill_title_belanja = "Senarai PTJ Usaha Lagi (< 85%)"
+            st.rerun()
+        html("""
+        <div class="traffic-caption-jpka" style="color:#a51218;">Usaha lagi!</div>
         """)
 
     with col4:
@@ -1720,7 +1830,32 @@ if menu == "1. Belanja & Hasil":
             df_show = df_group[df_group["Prestasi_%"] < 85].sort_values("Prestasi_%", ascending=False)
 
         if not df_show.empty:
-            st.dataframe(df_show[["PTJ1", "Prestasi_%"]].rename(columns={"PTJ1": "PTJ"}).round(2), use_container_width=True, hide_index=True)
+            df_show_list = df_show[[
+                "PTJ1",
+                "BAJET 2025",
+                "SASARAN Q1-25",
+                "SEBENAR Q1-25",
+                "Prestasi_%"
+            ]].copy()
+
+            df_show_list = df_show_list.rename(columns={
+                "PTJ1": "PTJ",
+                "BAJET 2025": "Bajet Tahunan",
+                "SASARAN Q1-25": "Bajet Qtr",
+                "SEBENAR Q1-25": "Sebenar",
+                "Prestasi_%": "Pencapaian (%)"
+            })
+
+            df_show_list["Bajet Tahunan"] = df_show_list["Bajet Tahunan"].apply(format_comma)
+            df_show_list["Bajet Qtr"] = df_show_list["Bajet Qtr"].apply(format_comma)
+            df_show_list["Sebenar"] = df_show_list["Sebenar"].apply(format_comma)
+            df_show_list["Pencapaian (%)"] = df_show_list["Pencapaian (%)"].map(lambda x: f"{x:,.2f}%")
+
+            st.dataframe(
+                df_show_list,
+                use_container_width=True,
+                hide_index=True
+            )
         else:
             st.info("Tiada rekod untuk kategori ini.")
 
