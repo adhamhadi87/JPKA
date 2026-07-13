@@ -731,6 +731,23 @@ div[class*="st-key-btn_jpka_merah"] button p {
 }
 
 /* Jumlah PTJ sebagai nombor clickable tanpa rupa button biasa */
+div[class*="st-key-btn_jumlah_ptj_jpka"] {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    text-align: center !important;
+}
+
+div[class*="st-key-btn_jumlah_ptj_jpka"] > div,
+div[class*="st-key-btn_jumlah_ptj_jpka"] [data-testid="stButton"] {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    text-align: center !important;
+}
+
 div[class*="st-key-btn_jumlah_ptj_jpka"] button {
     background: transparent !important;
     border: none !important;
@@ -788,7 +805,26 @@ div[class*="st-key-btn_jumlah_ptj_jpka"] button p {
     font-weight: 900;
 }
 .jpka-total-wrap {
+    width: 100%;
     padding-top: 11px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.jpka-total-wrap .jpka-total-label,
+.jpka-total-wrap .jpka-formula-line,
+.jpka-total-wrap .jpka-formula-highlight {
+    width: 100%;
+    text-align: center !important;
+}
+
+.jpka-total-wrap .jpka-total-divider {
+    width: 88%;
+    margin-left: auto;
+    margin-right: auto;
 }
 </style>
 """, unsafe_allow_html=True)
