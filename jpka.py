@@ -236,8 +236,10 @@ footer {visibility: hidden;}
 
 /* Sembunyikan toolbar Streamlit: Share, star, edit, GitHub dan ruang kosong atas */
 header[data-testid="stHeader"] {
-    height: 0 !important;
-    min-height: 0 !important;
+    display: block !important;
+    visibility: visible !important;
+    height: 3.5rem !important;
+    min-height: 3.5rem !important;
     background: transparent !important;
 }
 [data-testid="stToolbar"],
@@ -603,19 +605,6 @@ section[data-testid="stSidebar"] .stButton button {
     z-index: auto !important;
 }
 
-/* Collapse sidebar button biarkan default Streamlit supaya tidak lari bawah */
-button[aria-label*="Collapse"],
-button[aria-label*="collapse"],
-button[aria-label*="Expand"],
-button[aria-label*="expand"],
-[data-testid="stSidebarCollapseButton"],
-[data-testid="collapsedControl"] {
-    position: unset !important;
-    top: unset !important;
-    right: unset !important;
-    bottom: unset !important;
-    transform: unset !important;
-}
 
 /* Sidebar content scroll normal */
 section[data-testid="stSidebar"] {
@@ -623,18 +612,6 @@ section[data-testid="stSidebar"] {
 }
 
 
-/* ===== CENTER SIDEBAR COLLAPSE BUTTON ===== */
-[data-testid="collapsedControl"] {
-    top: 50vh !important;
-    transform: translateY(-50%) !important;
-    z-index: 99999 !important;
-}
-
-[data-testid="stSidebarCollapseButton"] {
-    top: 50vh !important;
-    transform: translateY(-50%) !important;
-    z-index: 99999 !important;
-}
 
 </style>
 """)
@@ -4336,100 +4313,87 @@ elif menu == "5. Cash Flow":
         use_container_width=True
     )
 
+
+
 # =========================================================
-# FINAL OVERRIDE: KEMBALIKAN BUTTON HIDE / UNHIDE SIDEBAR
-# Diletakkan paling bawah supaya mengatasi CSS terdahulu.
+# FINAL OVERRIDE: PAPARKAN SEMULA KAWALAN SIDEBAR STREAMLIT
 # =========================================================
 st.markdown("""
 <style>
-/* Kekalkan header minimum supaya kawalan sidebar tidak hilang */
+/* Header perlu wujud kerana butang sidebar berada di dalam header Streamlit. */
 header[data-testid="stHeader"] {
     display: block !important;
     visibility: visible !important;
-    height: 3rem !important;
-    min-height: 3rem !important;
+    height: 3.5rem !important;
+    min-height: 3.5rem !important;
     background: transparent !important;
-    pointer-events: none !important;
-}
-
-/* Toolbar lain kekal disembunyikan */
-[data-testid="stToolbar"],
-[data-testid="stDecoration"],
-[data-testid="stStatusWidget"],
-.stDeployButton {
-    display: none !important;
-    visibility: hidden !important;
-}
-
-/* Butang buka/tutup sidebar mesti kekal boleh diklik */
-[data-testid="stSidebarCollapseButton"],
-[data-testid="collapsedControl"] {
-    display: flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    position: fixed !important;
-    top: 50vh !important;
-    transform: translateY(-50%) !important;
-    z-index: 2147483647 !important;
     pointer-events: auto !important;
 }
 
-/* Ketika sidebar terbuka */
-[data-testid="stSidebarCollapseButton"] {
-    left: 19.2rem !important;
-    right: auto !important;
+/* Paparkan kawalan sidebar untuk beberapa versi Streamlit. */
+[data-testid="stSidebarCollapseButton"],
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="collapsedControl"],
+button[aria-label="Collapse sidebar"],
+button[aria-label="Expand sidebar"],
+button[aria-label*="sidebar" i] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    z-index: 999999 !important;
 }
 
-/* Ketika sidebar ditutup */
+/* Jangan paksa posisi pelik; gunakan kedudukan native Streamlit. */
+[data-testid="stSidebarCollapseButton"],
+[data-testid="stSidebarCollapsedControl"],
 [data-testid="collapsedControl"] {
-    left: 0.65rem !important;
+    position: fixed !important;
+    top: 0.55rem !important;
+    left: 0.55rem !important;
     right: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+}
+
+/* Semasa sidebar terbuka, letak butang di hujung sidebar. */
+section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] {
+    position: absolute !important;
+    top: 0.55rem !important;
+    right: 0.55rem !important;
+    left: auto !important;
 }
 
 [data-testid="stSidebarCollapseButton"] button,
-[data-testid="collapsedControl"] button {
+[data-testid="stSidebarCollapsedControl"] button,
+[data-testid="collapsedControl"] button,
+button[aria-label="Collapse sidebar"],
+button[aria-label="Expand sidebar"] {
     display: flex !important;
     visibility: visible !important;
     opacity: 1 !important;
-    width: 40px !important;
-    min-width: 40px !important;
-    height: 40px !important;
-    min-height: 40px !important;
+    width: 38px !important;
+    min-width: 38px !important;
+    height: 38px !important;
+    min-height: 38px !important;
     padding: 0 !important;
-    margin: 0 !important;
     align-items: center !important;
     justify-content: center !important;
     border-radius: 999px !important;
-    background: linear-gradient(135deg, #1e3a8a, #2563eb) !important;
+    background: #1e3a8a !important;
     color: #ffffff !important;
-    border: 2px solid rgba(255,255,255,0.85) !important;
-    box-shadow: 0 8px 24px rgba(15,23,42,0.35) !important;
-    cursor: pointer !important;
-    pointer-events: auto !important;
-}
-
-[data-testid="stSidebarCollapseButton"] button:hover,
-[data-testid="collapsedControl"] button:hover {
-    transform: scale(1.08) !important;
-    background: linear-gradient(135deg, #2563eb, #0ea5e9) !important;
+    border: 1px solid rgba(255,255,255,0.85) !important;
+    box-shadow: 0 6px 18px rgba(15,23,42,0.30) !important;
 }
 
 [data-testid="stSidebarCollapseButton"] svg,
+[data-testid="stSidebarCollapsedControl"] svg,
 [data-testid="collapsedControl"] svg,
-[data-testid="stSidebarCollapseButton"] button svg,
-[data-testid="collapsedControl"] button svg {
+button[aria-label="Collapse sidebar"] svg,
+button[aria-label="Expand sidebar"] svg {
     color: #ffffff !important;
     fill: #ffffff !important;
     stroke: #ffffff !important;
-    width: 22px !important;
-    height: 22px !important;
-}
-
-/* Elak kandungan utama menutup butang */
-.stApp,
-[data-testid="stAppViewContainer"],
-[data-testid="stMain"] {
-    overflow: visible !important;
 }
 </style>
 """, unsafe_allow_html=True)
