@@ -1242,6 +1242,7 @@ def detect_amount_column(df):
 # - Comparison Carta 2 menggunakan column dalam fail yang sama:
 #   SEBENAR 03-2025
 # =======================
+@st.cache_data(show_spinner="Memuatkan data Belanja & Hasil...")
 def load_data():
     df_dict = {}
     errors = []
@@ -1252,35 +1253,30 @@ def load_data():
 
     for q, filename in files.items():
         try:
-            df = pd.read_excel(filename, sheet_name="All2")
+            df = pd.read_excel(
+                filename,
+                sheet_name="All2",
+                engine="openpyxl"
+            )
             df = bersih_nama_column(df)
 
             if "KOD" in df.columns and "KOD1" not in df.columns:
                 df = df.rename(columns={"KOD": "KOD1"})
 
-            # Standardize nama column untuk dashboard.
-            # Nama dalaman lama dikekalkan supaya chart/slicer sedia ada masih jalan:
-            # BAJET 2025       = Bajet tahunan 2026
-            # SASARAN Q1-25    = Bajet/Sasaran 03-2026
-            # SEBENAR Q1-25    = Sebenar 03-2026
             rename_map = {
                 "BAJET 2026": "BAJET 2025",
                 "Bajet 2026": "BAJET 2025",
                 "BAJET2026": "BAJET 2025",
-
                 "SASARAN Q1-26": "SASARAN Q1-25",
                 "SASARAN 03-2026": "SASARAN Q1-25",
                 "BAJET 03-2026": "SASARAN Q1-25",
                 "BAJET QTR": "SASARAN Q1-25",
-
                 "SEBENAR Q1-26": "SEBENAR Q1-25",
                 "SEBENAR 03-2026": "SEBENAR Q1-25",
-
                 "SEBENAR Q1-25": "SEBENAR 03-2025",
                 "SEBENAR 03-2025": "SEBENAR 03-2025"
             }
 
-            # Rename hanya jika target belum wujud supaya column tidak tertimpa.
             safe_rename = {}
             for old_col, new_col in rename_map.items():
                 if old_col in df.columns:
@@ -1289,8 +1285,6 @@ def load_data():
 
             df = df.rename(columns=safe_rename)
 
-            # Fallback jika column comparison belum ada.
-            # Untuk file baru, column ini sepatutnya memang wujud.
             if "SEBENAR 03-2025" not in df.columns:
                 df["SEBENAR 03-2025"] = 0
 
@@ -1306,6 +1300,14 @@ def load_data():
             ]
             df = pastikan_numeric(df, numeric_cols)
 
+            text_columns = [
+                "PTJ", "PTJ1", "Kategori", "DESC", "KOD1",
+                "Sumber", "Quarter"
+            ]
+            for col in text_columns:
+                if col in df.columns:
+                    df[col] = df[col].fillna("").astype(str).str.strip()
+
             df_dict[q] = df
 
         except Exception as e:
@@ -1318,12 +1320,27 @@ def load_data():
 # LOAD DATA GERAN - WORKSHEET DATA SAHAJA
 # Nota: tidak guna cache supaya perubahan Excel terus dibaca semula.
 # =======================
+@st.cache_data(show_spinner="Memuatkan data Geran...")
 def load_data_geran():
     filename = "GL ADV 03-2026 14052026.XLSX"
 
     try:
-        df_data = pd.read_excel(filename, sheet_name="DATA")
+        df_data = pd.read_excel(
+            filename,
+            sheet_name="DATA",
+            engine="openpyxl"
+        )
         df_data = bersih_nama_column(df_data)
+
+        for col in ["NAMA", "NAMA1", "LEGEND", "PTJ"]:
+            if col in df_data.columns:
+                df_data[col] = (
+                    df_data[col]
+                    .fillna("")
+                    .astype(str)
+                    .str.strip()
+                )
+
         return df_data, ""
 
     except Exception as e:
@@ -1377,7 +1394,21 @@ st.sidebar.markdown("---")
 if st.sidebar.button("🚪 Logout", use_container_width=True):
     st.session_state["dashboard_authenticated"] = False
     st.rerun()
-if st.sidebar.button("🔄 Refresh Data Excel", use_container_width=True):
+if st.sidebar.button(
+    "🔄 Refresh Data Excel",
+    use_container_width=True,
+    key="refresh_semua_data_excel"
+):
+    st.cache_data.clear()
+
+    for state_key in [
+        "_geran_slicer_base_df_stable",
+        "_geran_slicer_base_df_full"
+    ]:
+        if state_key in st.session_state:
+            del st.session_state[state_key]
+
+    st.toast("Data Excel sedang dimuatkan semula.", icon="🔄")
     st.rerun()
 
 
@@ -2675,7 +2706,7 @@ elif menu == "2. Geran":
         return df_temp
 
     def _geran_base_df():
-        return st.session_state.get("_geran_slicer_base_df_stable", pd.DataFrame())
+        return df_geran_slicer_base
 
     def _geran_force_pills_key(col_name):
         return f"_geran_force_pills_{col_name}"
@@ -2772,7 +2803,6 @@ elif menu == "2. Geran":
         st.markdown("### 🔎  GERAN")
 
         df_geran_slicer_base = df_geran_tapis.copy()
-        st.session_state["_geran_slicer_base_df_stable"] = df_geran_slicer_base
 
         full_geran_ptj = _geran_unique_col(df_geran_slicer_base, ptj_col)
         full_geran_nama = _geran_unique_col(df_geran_slicer_base, nama_col)
