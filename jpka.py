@@ -231,30 +231,11 @@ def html(kod_html):
 
 html("""
 <style>
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
+/* Header, toolbar, Main Menu dan kawalan sidebar Streamlit dikekalkan secara asal. */
 
-/* Sembunyikan toolbar Streamlit: Share, star, edit, GitHub dan ruang kosong atas */
-header[data-testid="stHeader"] {
-    display: block !important;
-    visibility: visible !important;
-    height: 3.5rem !important;
-    min-height: 3.5rem !important;
-    background: transparent !important;
-}
-[data-testid="stToolbar"],
-[data-testid="stDecoration"],
-[data-testid="stStatusWidget"],
-.stDeployButton {
-    display: none !important;
-    visibility: hidden !important;
-    height: 0 !important;
-}
-
-/* Rapatkan kandungan betul-betul ke bahagian atas */
+/* Ruang kandungan diselaraskan dengan header Streamlit asal. */
 .block-container {
-    padding: 0.25rem 2rem 2rem 2rem !important;
-    margin-top: 0 !important;
+    padding: 1rem 2rem 2rem 2rem !important;
 }
 .card {
     background-color: #ffffff;
@@ -4312,88 +4293,3 @@ elif menu == "5. Cash Flow":
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         use_container_width=True
     )
-
-
-
-# =========================================================
-# FINAL OVERRIDE: PAPARKAN SEMULA KAWALAN SIDEBAR STREAMLIT
-# =========================================================
-st.markdown("""
-<style>
-/* Header perlu wujud kerana butang sidebar berada di dalam header Streamlit. */
-header[data-testid="stHeader"] {
-    display: block !important;
-    visibility: visible !important;
-    height: 3.5rem !important;
-    min-height: 3.5rem !important;
-    background: transparent !important;
-    pointer-events: auto !important;
-}
-
-/* Paparkan kawalan sidebar untuk beberapa versi Streamlit. */
-[data-testid="stSidebarCollapseButton"],
-[data-testid="stSidebarCollapsedControl"],
-[data-testid="collapsedControl"],
-button[aria-label="Collapse sidebar"],
-button[aria-label="Expand sidebar"],
-button[aria-label*="sidebar" i] {
-    display: flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
-    z-index: 999999 !important;
-}
-
-/* Jangan paksa posisi pelik; gunakan kedudukan native Streamlit. */
-[data-testid="stSidebarCollapseButton"],
-[data-testid="stSidebarCollapsedControl"],
-[data-testid="collapsedControl"] {
-    position: fixed !important;
-    top: 0.55rem !important;
-    left: 0.55rem !important;
-    right: auto !important;
-    bottom: auto !important;
-    transform: none !important;
-}
-
-/* Semasa sidebar terbuka, letak butang di hujung sidebar. */
-section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] {
-    position: absolute !important;
-    top: 0.55rem !important;
-    right: 0.55rem !important;
-    left: auto !important;
-}
-
-[data-testid="stSidebarCollapseButton"] button,
-[data-testid="stSidebarCollapsedControl"] button,
-[data-testid="collapsedControl"] button,
-button[aria-label="Collapse sidebar"],
-button[aria-label="Expand sidebar"] {
-    display: flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    width: 38px !important;
-    min-width: 38px !important;
-    height: 38px !important;
-    min-height: 38px !important;
-    padding: 0 !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border-radius: 999px !important;
-    background: #1e3a8a !important;
-    color: #ffffff !important;
-    border: 1px solid rgba(255,255,255,0.85) !important;
-    box-shadow: 0 6px 18px rgba(15,23,42,0.30) !important;
-}
-
-[data-testid="stSidebarCollapseButton"] svg,
-[data-testid="stSidebarCollapsedControl"] svg,
-[data-testid="collapsedControl"] svg,
-button[aria-label="Collapse sidebar"] svg,
-button[aria-label="Expand sidebar"] svg {
-    color: #ffffff !important;
-    fill: #ffffff !important;
-    stroke: #ffffff !important;
-}
-</style>
-""", unsafe_allow_html=True)
