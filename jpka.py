@@ -4336,3 +4336,100 @@ elif menu == "5. Cash Flow":
         use_container_width=True
     )
 
+# =========================================================
+# FINAL OVERRIDE: KEMBALIKAN BUTTON HIDE / UNHIDE SIDEBAR
+# Diletakkan paling bawah supaya mengatasi CSS terdahulu.
+# =========================================================
+st.markdown("""
+<style>
+/* Kekalkan header minimum supaya kawalan sidebar tidak hilang */
+header[data-testid="stHeader"] {
+    display: block !important;
+    visibility: visible !important;
+    height: 3rem !important;
+    min-height: 3rem !important;
+    background: transparent !important;
+    pointer-events: none !important;
+}
+
+/* Toolbar lain kekal disembunyikan */
+[data-testid="stToolbar"],
+[data-testid="stDecoration"],
+[data-testid="stStatusWidget"],
+.stDeployButton {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* Butang buka/tutup sidebar mesti kekal boleh diklik */
+[data-testid="stSidebarCollapseButton"],
+[data-testid="collapsedControl"] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: fixed !important;
+    top: 50vh !important;
+    transform: translateY(-50%) !important;
+    z-index: 2147483647 !important;
+    pointer-events: auto !important;
+}
+
+/* Ketika sidebar terbuka */
+[data-testid="stSidebarCollapseButton"] {
+    left: 19.2rem !important;
+    right: auto !important;
+}
+
+/* Ketika sidebar ditutup */
+[data-testid="collapsedControl"] {
+    left: 0.65rem !important;
+    right: auto !important;
+}
+
+[data-testid="stSidebarCollapseButton"] button,
+[data-testid="collapsedControl"] button {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 40px !important;
+    min-width: 40px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 999px !important;
+    background: linear-gradient(135deg, #1e3a8a, #2563eb) !important;
+    color: #ffffff !important;
+    border: 2px solid rgba(255,255,255,0.85) !important;
+    box-shadow: 0 8px 24px rgba(15,23,42,0.35) !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+}
+
+[data-testid="stSidebarCollapseButton"] button:hover,
+[data-testid="collapsedControl"] button:hover {
+    transform: scale(1.08) !important;
+    background: linear-gradient(135deg, #2563eb, #0ea5e9) !important;
+}
+
+[data-testid="stSidebarCollapseButton"] svg,
+[data-testid="collapsedControl"] svg,
+[data-testid="stSidebarCollapseButton"] button svg,
+[data-testid="collapsedControl"] button svg {
+    color: #ffffff !important;
+    fill: #ffffff !important;
+    stroke: #ffffff !important;
+    width: 22px !important;
+    height: 22px !important;
+}
+
+/* Elak kandungan utama menutup butang */
+.stApp,
+[data-testid="stAppViewContainer"],
+[data-testid="stMain"] {
+    overflow: visible !important;
+}
+</style>
+""", unsafe_allow_html=True)
