@@ -789,83 +789,23 @@ div[class*="st-key-btn_jumlah_ptj_jpka"] button p {
 
 
 
-
-
-
 # =========================================================
-# FOCUS VIEW / SLIDE VIEW
-# Sidebar kekal dipaparkan. Hanya satu bahagian dashboard
-# dipaparkan pada satu masa dan dikawal melalui butang < dan >.
+# FOCUS VIEW NAVIGATION - SIDEBAR KEKAL
+# Papar satu tajuk sahaja pada satu masa seperti Prestasi Program.
 # =========================================================
 st.markdown("""
 <style>
-.focus-nav-shell {
-    width: 100%;
-    display: grid;
-    grid-template-columns: 104px minmax(0, 1fr) 104px;
-    gap: 18px;
-    align-items: center;
-    margin: 2px 0 22px 0;
-}
-.focus-title-box {
-    min-height: 48px;
-    border: 1px solid rgba(148,163,184,0.42);
-    border-radius: 11px;
-    background: rgba(255,255,255,0.86);
-    box-shadow: 0 8px 24px rgba(15,23,42,0.08);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    color: #172033;
-    font-size: 15px;
-    font-weight: 900;
-    letter-spacing: 0.1px;
-    padding: 8px 16px;
-}
-.focus-page-indicator {
-    width: 100%;
-    text-align: center;
-    color: #64748b;
-    font-size: 12px;
-    font-weight: 700;
-    margin-top: -14px;
-    margin-bottom: 12px;
-}
+.focus-title-box {width:100%;min-height:46px;display:flex;align-items:center;justify-content:center;padding:8px 16px;border:1px solid rgba(148,163,184,.42);border-radius:12px;background:rgba(255,255,255,.84);box-shadow:0 8px 22px rgba(15,23,42,.08);color:#172033;font-size:15px;font-weight:850;text-align:center;}
+.focus-progress {text-align:center;color:#64748b;font-size:12px;font-weight:700;margin:5px 0 14px 0;}
+.focus-home-card {min-height:118px;border-radius:18px;border:1px solid rgba(255,255,255,.72);background:rgba(255,255,255,.66);box-shadow:0 12px 28px rgba(15,23,42,.09);padding:18px;text-align:center;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);}
+.focus-home-card .icon {font-size:30px;line-height:1;margin-bottom:8px;}
+.focus-home-card .title {color:#1e293b;font-weight:900;font-size:15px;}
+.focus-home-note {text-align:center;color:#64748b;font-size:13px;margin:0 0 12px 0;}
 div[class*="st-key-focus_prev_belanja"] button,
-div[class*="st-key-focus_next_belanja"] button {
-    min-height: 48px !important;
-    height: 48px !important;
-    width: 100% !important;
-    border-radius: 11px !important;
-    background: rgba(255,255,255,0.88) !important;
-    color: #172033 !important;
-    border: 1px solid rgba(148,163,184,0.42) !important;
-    box-shadow: 0 8px 24px rgba(15,23,42,0.08) !important;
-    font-size: 20px !important;
-    font-weight: 900 !important;
-    padding: 0 !important;
-}
-div[class*="st-key-focus_prev_belanja"] button:hover,
-div[class*="st-key-focus_next_belanja"] button:hover {
-    background: #ffffff !important;
-    border-color: rgba(37,99,235,0.55) !important;
-    color: #2563eb !important;
-    transform: translateY(-1px) !important;
-}
-@media (max-width: 700px) {
-    .focus-nav-shell {
-        grid-template-columns: 58px minmax(0, 1fr) 58px;
-        gap: 8px;
-    }
-    .focus-title-box {
-        font-size: 13px;
-        padding: 7px 8px;
-    }
-}
+div[class*="st-key-focus_home_belanja"] button,
+div[class*="st-key-focus_next_belanja"] button {min-height:46px !important;border-radius:12px !important;padding:0 !important;font-size:20px !important;}
 </style>
 """, unsafe_allow_html=True)
-
 
 # =======================
 # FUNGSI UMUM
@@ -1825,55 +1765,74 @@ if menu == "1. Belanja & Hasil":
     )
 
     # =====================================================
-    # NAVIGASI FOCUS VIEW - BELANJA & HASIL
-    # Hanya satu bahagian dipaparkan pada satu masa.
+    # FOCUS VIEW BELANJA & HASIL
     # =====================================================
     focus_sections_belanja = [
-        "🚦 STATUS PRESTASI PTJ",
-        "📋 RINGKASAN KESELURUHAN",
-        "📊 CARTA 1: PERBANDINGAN KATEGORI",
-        "📊 CARTA 2: SEBENAR 03-2026 VS 03-2025",
-        "📊 CARTA 3: PRESTASI ITEM",
-        "📊 CARTA 4: KOD ITEM",
-        "📈 CARTA 5: PRESTASI PTJ",
-        "📋 SUMMARY KESELURUHAN",
+        ("🚦", "STATUS PRESTASI PTJ"),
+        ("📋", "RINGKASAN KESELURUHAN"),
+        ("📊", "CARTA 1: PERBANDINGAN KATEGORI"),
+        ("📊", "CARTA 2: PERBANDINGAN SEBENAR 03-2026 VS 03-2025"),
+        ("📊", "CARTA 3: PRESTASI ITEM"),
+        ("📊", "CARTA 4: KOD ITEM"),
+        ("📈", "CARTA 5: PRESTASI PTJ"),
+        ("📋", "SUMMARY KESELURUHAN"),
     ]
 
     if "focus_index_belanja" not in st.session_state:
-        st.session_state["focus_index_belanja"] = 0
+        st.session_state["focus_index_belanja"] = -1
 
-    focus_index_belanja = int(st.session_state.get("focus_index_belanja", 0))
-    focus_index_belanja = max(0, min(focus_index_belanja, len(focus_sections_belanja) - 1))
-    st.session_state["focus_index_belanja"] = focus_index_belanja
+    focus_index_belanja = int(st.session_state.get("focus_index_belanja", -1))
+    max_focus_belanja = len(focus_sections_belanja) - 1
 
-    nav_prev_col, nav_title_col, nav_next_col = st.columns([0.8, 8.8, 0.8])
+    nav_prev, nav_title, nav_home, nav_next = st.columns([0.8, 7.4, 0.8, 0.8])
 
-    with nav_prev_col:
+    with nav_prev:
         if st.button("‹", key="focus_prev_belanja", use_container_width=True):
-            st.session_state["focus_index_belanja"] = (
-                focus_index_belanja - 1
-            ) % len(focus_sections_belanja)
+            st.session_state["focus_index_belanja"] = max_focus_belanja if focus_index_belanja == -1 else max(-1, focus_index_belanja - 1)
+            st.session_state.show_drill_belanja = None
             st.rerun()
 
-    with nav_title_col:
-        html(f"""
-        <div class="focus-title-box">
-            {focus_sections_belanja[focus_index_belanja]}
-        </div>
-        """)
+    with nav_title:
+        if focus_index_belanja == -1:
+            current_focus_title = "🏠 HALAMAN UTAMA"
+        else:
+            icon_focus, title_focus = focus_sections_belanja[focus_index_belanja]
+            current_focus_title = f"{icon_focus} {title_focus}"
+        html(f'<div class="focus-title-box">{current_focus_title}</div>')
 
-    with nav_next_col:
+    with nav_home:
+        if st.button("⌂", key="focus_home_belanja", use_container_width=True, help="Kembali ke halaman utama"):
+            st.session_state["focus_index_belanja"] = -1
+            st.session_state.show_drill_belanja = None
+            st.rerun()
+
+    with nav_next:
         if st.button("›", key="focus_next_belanja", use_container_width=True):
-            st.session_state["focus_index_belanja"] = (
-                focus_index_belanja + 1
-            ) % len(focus_sections_belanja)
+            st.session_state["focus_index_belanja"] = 0 if focus_index_belanja == -1 else min(max_focus_belanja, focus_index_belanja + 1)
+            st.session_state.show_drill_belanja = None
             st.rerun()
 
-    html(f"""
-    <div class="focus-page-indicator">
-        {focus_index_belanja + 1} / {len(focus_sections_belanja)}
-    </div>
-    """)
+    if focus_index_belanja == -1:
+        html('<div class="focus-progress">Pilih satu tajuk untuk membuka paparan fokus</div>')
+    else:
+        html(f'<div class="focus-progress">Paparan {focus_index_belanja + 1} daripada {len(focus_sections_belanja)}</div>')
+
+    if focus_index_belanja == -1:
+        st.markdown("#### Pilihan Paparan")
+        html('<div class="focus-home-note">Klik mana-mana tajuk di bawah. Sidebar dan semua filter kekal aktif.</div>')
+        home_cols = st.columns(4)
+        for i, (section_icon, section_title) in enumerate(focus_sections_belanja):
+            with home_cols[i % 4]:
+                html(
+                    f'<div class="focus-home-card">'
+                    f'<div class="icon">{section_icon}</div>'
+                    f'<div class="title">{section_title}</div>'
+                    f'</div>'
+                )
+                if st.button("Buka", key=f"focus_open_belanja_{i}", use_container_width=True):
+                    st.session_state["focus_index_belanja"] = i
+                    st.session_state.show_drill_belanja = None
+                    st.rerun()
 
     if focus_index_belanja == 0:
         st.markdown("### 🚦 STATUS PRESTASI PTJ")
@@ -2065,7 +2024,7 @@ if menu == "1. Belanja & Hasil":
                 st.rerun()
 
     if focus_index_belanja == 1:
-        with st.expander("📋 RINGKASAN KESELURUHAN", expanded=True):
+        with st.expander("📋 RINGKASAN KESELURUHAN", expanded=False):
             for q in pilih_quarter:
                 df_q = df_akhir[df_akhir["Quarter"] == q]
                 with st.expander(f"Tempoh {q}", expanded=True):
@@ -2100,7 +2059,7 @@ if menu == "1. Belanja & Hasil":
                             """)
 
     if focus_index_belanja == 2:
-        with st.expander("📊 CARTA 1: PERBANDINGAN  KATEGORI", expanded=True):
+        with st.expander("📊 CARTA 1: PERBANDINGAN  KATEGORI", expanded=False):
             df_chart = df_akhir.copy()
             df_chart["BAJET_JT"] = df_chart["BAJET 2025"] / 1_000_000
             df_chart["SASARAN_JT"] = df_chart["SASARAN Q1-25"] / 1_000_000
@@ -2161,7 +2120,7 @@ if menu == "1. Belanja & Hasil":
                 st.plotly_chart(fig1, use_container_width=True)
 
     if focus_index_belanja == 3:
-        with st.expander("📊 CARTA 2: PERBANDINGAN SEBENAR 03-2026 VS 03-2025", expanded=True):
+        with st.expander("📊 CARTA 2: PERBANDINGAN SEBENAR 03-2026 VS 03-2025", expanded=False):
             # =======================
             # CARTA 2 - COMPARISON DALAM SATU FAIL EXCEL
             # Fail: JPKA_ANALISA PK CIDB 03-2026.xlsx
@@ -2297,7 +2256,7 @@ if menu == "1. Belanja & Hasil":
                 )
 
     if focus_index_belanja == 4:
-        with st.expander("📊 CARTA 3: PRESTASI  ITEM", expanded=True):
+        with st.expander("📊 CARTA 3: PRESTASI  ITEM", expanded=False):
             if len(pilih_quarter) > 1:
                 cols = st.columns(len(pilih_quarter))
                 for i, q in enumerate(pilih_quarter):
@@ -2369,7 +2328,7 @@ if menu == "1. Belanja & Hasil":
 
 
     if focus_index_belanja == 5:
-        with st.expander("📊 CARTA 4: KOD ITEM", expanded=True):
+        with st.expander("📊 CARTA 4: KOD ITEM", expanded=False):
             df_by_kod_item = (
                 df_akhir.groupby(["KOD1"], as_index=False)
                 .agg({
@@ -2467,7 +2426,7 @@ if menu == "1. Belanja & Hasil":
             st.plotly_chart(fig_by_kod_item, use_container_width=True)
 
     if focus_index_belanja == 6:
-        with st.expander("📈 CARTA 5: PRESTASI PTJ", expanded=True):
+        with st.expander("📈 CARTA 5: PRESTASI PTJ", expanded=False):
 
             df_c6 = df_group.copy()
 
@@ -2659,7 +2618,7 @@ if menu == "1. Belanja & Hasil":
 
 
     if focus_index_belanja == 7:
-        with st.expander("📋 SUMMARY KESELURUHAN", expanded=True):
+        with st.expander("📋 SUMMARY KESELURUHAN", expanded=False):
             summary = df_akhir.groupby(["PTJ1", "Kategori", "DESC", "Quarter"], as_index=False).agg({
                 "BAJET 2025": "sum",
                 "SASARAN Q1-25": "sum",
@@ -2718,7 +2677,7 @@ if menu == "1. Belanja & Hasil":
                 use_container_width=True
             )
 
-    st.caption("Tempoh: 03-2026 • Comparison Carta 2 menggunakan column SEBENAR 03-2025 • Prestasi Kewangan CIDB JPKA")
+        st.caption("Tempoh: 03-2026 • Comparison Carta 2 menggunakan column SEBENAR 03-2025 • Prestasi Kewangan CIDB JPKA")
 
 # =======================
 # MENU 2: GERAN - SLICER DARI WORKSHEET DATA COLUMN NAMA DAN LEGEND
