@@ -789,176 +789,83 @@ div[class*="st-key-btn_jumlah_ptj_jpka"] button p {
 
 
 
+
+
+
 # =========================================================
-# FULL SCREEN DASHBOARD - SIDEBAR KEKAL DIPAPARKAN
-# Sama konsep seperti Dashboard Prestasi Program.
-# - Full screen meliputi keseluruhan aplikasi Streamlit.
-# - Sidebar tidak disembunyikan.
-# - Tekan ESC untuk keluar daripada full screen.
+# FOCUS VIEW / SLIDE VIEW
+# Sidebar kekal dipaparkan. Hanya satu bahagian dashboard
+# dipaparkan pada satu masa dan dikawal melalui butang < dan >.
 # =========================================================
 st.markdown("""
 <style>
-/* Gunakan keseluruhan ruang skrin tanpa mengecilkan sidebar. */
-.main .block-container,
-section.main .block-container,
-div[data-testid="stMainBlockContainer"] {
-    width: 100% !important;
-    max-width: 100% !important;
-    padding-left: 1.25rem !important;
-    padding-right: 1.25rem !important;
+.focus-nav-shell {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 104px minmax(0, 1fr) 104px;
+    gap: 18px;
+    align-items: center;
+    margin: 2px 0 22px 0;
 }
-
-/* Sidebar kekal pada saiz asal semasa full screen. */
-section[data-testid="stSidebar"] {
-    display: block !important;
-    visibility: visible !important;
-}
-
-/* Butang full screen terapung di penjuru kanan atas. */
-#jpka-fullscreen-toggle {
-    position: fixed;
-    top: 0.72rem;
-    right: 4.3rem;
-    z-index: 999999;
-    width: 42px;
-    height: 42px;
-    border: 1px solid rgba(148,163,184,0.40);
-    border-radius: 12px;
-    background: rgba(255,255,255,0.88);
-    color: #0f172a;
-    box-shadow: 0 8px 24px rgba(15,23,42,0.16);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    cursor: pointer;
-    font-size: 21px;
-    line-height: 1;
+.focus-title-box {
+    min-height: 48px;
+    border: 1px solid rgba(148,163,184,0.42);
+    border-radius: 11px;
+    background: rgba(255,255,255,0.86);
+    box-shadow: 0 8px 24px rgba(15,23,42,0.08);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.18s ease, box-shadow 0.18s ease,
-                background 0.18s ease;
+    text-align: center;
+    color: #172033;
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: 0.1px;
+    padding: 8px 16px;
 }
-
-#jpka-fullscreen-toggle:hover {
-    transform: translateY(-2px) scale(1.04);
-    background: #ffffff;
-    box-shadow: 0 12px 28px rgba(15,23,42,0.22);
+.focus-page-indicator {
+    width: 100%;
+    text-align: center;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+    margin-top: -14px;
+    margin-bottom: 12px;
 }
-
-#jpka-fullscreen-toggle:active {
-    transform: translateY(1px) scale(0.98);
+div[class*="st-key-focus_prev_belanja"] button,
+div[class*="st-key-focus_next_belanja"] button {
+    min-height: 48px !important;
+    height: 48px !important;
+    width: 100% !important;
+    border-radius: 11px !important;
+    background: rgba(255,255,255,0.88) !important;
+    color: #172033 !important;
+    border: 1px solid rgba(148,163,184,0.42) !important;
+    box-shadow: 0 8px 24px rgba(15,23,42,0.08) !important;
+    font-size: 20px !important;
+    font-weight: 900 !important;
+    padding: 0 !important;
 }
-
-/* Dalam paparan telefon, rapatkan butang agar tidak bertindih. */
-@media (max-width: 768px) {
-    #jpka-fullscreen-toggle {
-        top: 0.55rem;
-        right: 3.65rem;
-        width: 38px;
-        height: 38px;
-        border-radius: 10px;
-        font-size: 19px;
+div[class*="st-key-focus_prev_belanja"] button:hover,
+div[class*="st-key-focus_next_belanja"] button:hover {
+    background: #ffffff !important;
+    border-color: rgba(37,99,235,0.55) !important;
+    color: #2563eb !important;
+    transform: translateY(-1px) !important;
+}
+@media (max-width: 700px) {
+    .focus-nav-shell {
+        grid-template-columns: 58px minmax(0, 1fr) 58px;
+        gap: 8px;
+    }
+    .focus-title-box {
+        font-size: 13px;
+        padding: 7px 8px;
     }
 }
 </style>
 """, unsafe_allow_html=True)
 
-# Cipta butang dalam parent Streamlit supaya full screen merangkumi
-# main dashboard dan sidebar sekali. Kod ini tidak mengubah function dashboard.
-components.html(
-    """
-    <script>
-    (function () {
-        const doc = window.parent.document;
-        const buttonId = "jpka-fullscreen-toggle";
-
-        function isFullscreen() {
-            return Boolean(
-                doc.fullscreenElement ||
-                doc.webkitFullscreenElement ||
-                doc.msFullscreenElement
-            );
-        }
-
-        function updateButton(button) {
-            if (!button) return;
-            const active = isFullscreen();
-            button.innerHTML = active ? "⤢" : "⛶";
-            button.title = active
-                ? "Keluar paparan penuh (atau tekan ESC)"
-                : "Paparan penuh";
-            button.setAttribute(
-                "aria-label",
-                active ? "Keluar paparan penuh" : "Paparan penuh"
-            );
-        }
-
-        function enterFullscreen() {
-            const root = doc.documentElement;
-            if (root.requestFullscreen) {
-                return root.requestFullscreen();
-            }
-            if (root.webkitRequestFullscreen) {
-                return root.webkitRequestFullscreen();
-            }
-            if (root.msRequestFullscreen) {
-                return root.msRequestFullscreen();
-            }
-        }
-
-        function exitFullscreen() {
-            if (doc.exitFullscreen) {
-                return doc.exitFullscreen();
-            }
-            if (doc.webkitExitFullscreen) {
-                return doc.webkitExitFullscreen();
-            }
-            if (doc.msExitFullscreen) {
-                return doc.msExitFullscreen();
-            }
-        }
-
-        let button = doc.getElementById(buttonId);
-
-        if (!button) {
-            button = doc.createElement("button");
-            button.id = buttonId;
-            button.type = "button";
-            doc.body.appendChild(button);
-
-            button.addEventListener("click", function (event) {
-                event.preventDefault();
-                event.stopPropagation();
-
-                try {
-                    if (isFullscreen()) {
-                        exitFullscreen();
-                    } else {
-                        enterFullscreen();
-                    }
-                } catch (error) {
-                    console.error("Full screen tidak dapat dibuka:", error);
-                }
-            });
-        }
-
-        updateButton(button);
-
-        if (!doc.__jpkaFullscreenListenerAdded) {
-            doc.addEventListener("fullscreenchange", function () {
-                updateButton(doc.getElementById(buttonId));
-            });
-            doc.addEventListener("webkitfullscreenchange", function () {
-                updateButton(doc.getElementById(buttonId));
-            });
-            doc.__jpkaFullscreenListenerAdded = true;
-        }
-    })();
-    </script>
-    """,
-    height=0,
-    width=0
-)
 
 # =======================
 # FUNGSI UMUM
@@ -1917,840 +1824,899 @@ if menu == "1. Belanja & Hasil":
         "Lain-lain"
     )
 
-    st.markdown("### 🚦 STATUS PRESTASI PTJ")
+    # =====================================================
+    # NAVIGASI FOCUS VIEW - BELANJA & HASIL
+    # Hanya satu bahagian dipaparkan pada satu masa.
+    # =====================================================
+    focus_sections_belanja = [
+        "🚦 STATUS PRESTASI PTJ",
+        "📋 RINGKASAN KESELURUHAN",
+        "📊 CARTA 1: PERBANDINGAN KATEGORI",
+        "📊 CARTA 2: SEBENAR 03-2026 VS 03-2025",
+        "📊 CARTA 3: PRESTASI ITEM",
+        "📊 CARTA 4: KOD ITEM",
+        "📈 CARTA 5: PRESTASI PTJ",
+        "📋 SUMMARY KESELURUHAN",
+    ]
 
-    df_akhir["Prestasi_%"] = df_akhir.apply(
-        lambda row: hitung_prestasi(row["SEBENAR Q1-25"], row["SASARAN Q1-25"]),
-        axis=1
-    )
+    if "focus_index_belanja" not in st.session_state:
+        st.session_state["focus_index_belanja"] = 0
 
-    df_group = df_akhir.groupby("PTJ1", as_index=False).agg({
-        "BAJET 2025": "sum",
-        "SASARAN Q1-25": "sum",
-        "SEBENAR Q1-25": "sum"
-    })
+    focus_index_belanja = int(st.session_state.get("focus_index_belanja", 0))
+    focus_index_belanja = max(0, min(focus_index_belanja, len(focus_sections_belanja) - 1))
+    st.session_state["focus_index_belanja"] = focus_index_belanja
 
-    # Prestasi_% lama dikekalkan untuk status lampu / drilldown.
-    # Formula lama: Sebenar / Sasaran
-    df_group["Prestasi_%"] = df_group.apply(
-        lambda row: hitung_prestasi(row["SEBENAR Q1-25"], row["SASARAN Q1-25"]),
-        axis=1
-    )
+    nav_prev_col, nav_title_col, nav_next_col = st.columns([0.8, 8.8, 0.8])
 
-    # Formula baharu untuk Carta 4:
-    # % Prestasi   = SEBENAR / BAJET
-    # % Sasaran    = SASARAN / BAJET
-    # % Pencapaian = SEBENAR / SASARAN
-
-    # Jika BAJET kosong / 0:
-    # - Papar nilai graf = 0%
-    # - Papar nota #DIV/0! pada label
-
-    df_group["Nota_DIV0"] = df_group["BAJET 2025"].apply(
-        lambda x: "#DIV/0!" if pd.to_numeric(x, errors="coerce") in [0, 0.0] else ""
-    )
-
-    df_group["% Prestasi"] = df_group.apply(
-        lambda row: 0
-        if pd.to_numeric(row["BAJET 2025"], errors="coerce") in [0, 0.0]
-        else hitung_prestasi(row["SEBENAR Q1-25"], row["BAJET 2025"]),
-        axis=1
-    )
-
-    df_group["% Sasaran"] = df_group.apply(
-        lambda row: 0
-        if pd.to_numeric(row["BAJET 2025"], errors="coerce") in [0, 0.0]
-        else hitung_prestasi(row["SASARAN Q1-25"], row["BAJET 2025"]),
-        axis=1
-    )
-
-    df_group["% Pencapaian"] = df_group.apply(
-        lambda row: 0
-        if pd.to_numeric(row["SASARAN Q1-25"], errors="coerce") in [0, 0.0]
-        else hitung_prestasi(row["SEBENAR Q1-25"], row["SASARAN Q1-25"]),
-        axis=1
-    )
-
-    hebat = len(df_group[df_group["Prestasi_%"] > 95])
-    bagus = len(df_group[(df_group["Prestasi_%"] >= 85) & (df_group["Prestasi_%"] <= 94.99)])
-    usaha = len(df_group[df_group["Prestasi_%"] < 85])
-    total = len(df_group)
-
-    total_bajet = df_akhir["BAJET 2025"].sum()
-    total_sebenar = df_akhir["SEBENAR Q1-25"].sum()
-    total_sasaran = df_akhir["SASARAN Q1-25"].sum()
-
-    # Area traffic light:
-    # SASARAN    = Sasaran / Bajet
-    # PRESTASI   = Sebenar / Bajet
-    # PENCAPAIAN = Sebenar / Sasaran
-    sasaran_pct = hitung_prestasi(total_sasaran, total_bajet)
-    prestasi_pct = hitung_prestasi(total_sebenar, total_bajet)
-    pencapaian = hitung_prestasi(total_sebenar, total_sasaran)
-
-    sasaran_int = round(sasaran_pct)
-    prestasi_int = round(prestasi_pct)
-    pencapaian_int = round(pencapaian)
-
-    col1, col2, col3, col4 = st.columns([1, 1, 1, 1.2])
-
-    if "show_drill_belanja" not in st.session_state:
-        st.session_state.show_drill_belanja = None
-        st.session_state.drill_title_belanja = ""
-
-    with col1:
-        html("""
-        <div class="traffic-range-jpka">&gt; 95%</div>
-        """)
-        if st.button(f"{hebat}", key="btn_jpka_hijau"):
-            st.session_state.show_drill_belanja = "hebat"
-            st.session_state.drill_title_belanja = "Senarai PTJ Hebat (> 95%)"
-            st.rerun()
-        html("""
-        <div class="traffic-caption-jpka" style="color:#07912b;">Hebat!</div>
-        """)
-
-    with col2:
-        html("""
-        <div class="traffic-range-jpka">85% - 94.99%</div>
-        """)
-        if st.button(f"{bagus}", key="btn_jpka_kuning"):
-            st.session_state.show_drill_belanja = "bagus"
-            st.session_state.drill_title_belanja = "Senarai PTJ Bagus (85% - 94.99%)"
-            st.rerun()
-        html("""
-        <div class="traffic-caption-jpka" style="color:#b98a00;">Bagus!</div>
-        """)
-
-    with col3:
-        html("""
-        <div class="traffic-range-jpka">&lt; 85%</div>
-        """)
-        if st.button(f"{usaha}", key="btn_jpka_merah"):
-            st.session_state.show_drill_belanja = "usaha"
-            st.session_state.drill_title_belanja = "Senarai PTJ Usaha Lagi (< 85%)"
-            st.rerun()
-        html("""
-        <div class="traffic-caption-jpka" style="color:#a51218;">Usaha lagi!</div>
-        """)
-
-    with col4:
-        html('<div class="jpka-total-wrap">')
-        if st.button(f"{total}", key="btn_jumlah_ptj_jpka"):
-            st.session_state.show_drill_belanja = "semua"
-            st.session_state.drill_title_belanja = "Senarai Keseluruhan PTJ"
+    with nav_prev_col:
+        if st.button("‹", key="focus_prev_belanja", use_container_width=True):
+            st.session_state["focus_index_belanja"] = (
+                focus_index_belanja - 1
+            ) % len(focus_sections_belanja)
             st.rerun()
 
+    with nav_title_col:
         html(f"""
-        <div class="jpka-total-label">Jumlah PTJ</div>
-        <div class="jpka-total-divider"></div>
-        <p class="jpka-formula-line" title="Formula: Bajet Qtr / Bajet Tahunan">
-            <strong>SASARAN</strong> {sasaran_int}%
-        </p>
-        <p class="jpka-formula-line" title="Formula: Sebenar / Bajet Tahunan">
-            <strong>PRESTASI</strong> {prestasi_int}%
-        </p>
-        <p class="jpka-formula-highlight" title="Formula: Prestasi / Sasaran">
-            PENCAPAIAN {pencapaian_int}%
-        </p>
+        <div class="focus-title-box">
+            {focus_sections_belanja[focus_index_belanja]}
         </div>
         """)
 
-    if st.session_state.show_drill_belanja:
-        st.subheader(st.session_state.drill_title_belanja)
-        if st.session_state.show_drill_belanja == "hebat":
-            df_show = df_group[df_group["Prestasi_%"] > 95].sort_values("Prestasi_%", ascending=False)
-        elif st.session_state.show_drill_belanja == "bagus":
-            df_show = df_group[
-                (df_group["Prestasi_%"] >= 85) &
-                (df_group["Prestasi_%"] <= 94.99)
-            ].sort_values("Prestasi_%", ascending=False)
-        elif st.session_state.show_drill_belanja == "usaha":
-            df_show = df_group[df_group["Prestasi_%"] < 85].sort_values("Prestasi_%", ascending=False)
-        else:
-            # Klik Jumlah PTJ: papar semua PTJ tanpa tapisan traffic light.
-            df_show = df_group.sort_values("Prestasi_%", ascending=False)
-
-        if not df_show.empty:
-            df_show_list = df_show[[
-                "PTJ1",
-                "BAJET 2025",
-                "SASARAN Q1-25",
-                "SEBENAR Q1-25",
-                "Prestasi_%"
-            ]].copy()
-
-            df_show_list = df_show_list.rename(columns={
-                "PTJ1": "PTJ",
-                "BAJET 2025": "Bajet Tahunan",
-                "SASARAN Q1-25": "Bajet Qtr",
-                "SEBENAR Q1-25": "Sebenar",
-                "Prestasi_%": "Pencapaian (%)"
-            })
-
-            df_show_list["Bajet Tahunan"] = df_show_list["Bajet Tahunan"].apply(format_comma)
-            df_show_list["Bajet Qtr"] = df_show_list["Bajet Qtr"].apply(format_comma)
-            df_show_list["Sebenar"] = df_show_list["Sebenar"].apply(format_comma)
-            df_show_list["Pencapaian (%)"] = df_show_list["Pencapaian (%)"].map(lambda x: f"{x:,.2f}%")
-
-            st.dataframe(
-                df_show_list,
-                use_container_width=True,
-                hide_index=True
-            )
-        else:
-            st.info("Tiada rekod untuk kategori ini.")
-
-        if st.button("❌ Tutup Senarai", type="primary"):
-            st.session_state.show_drill_belanja = None
+    with nav_next_col:
+        if st.button("›", key="focus_next_belanja", use_container_width=True):
+            st.session_state["focus_index_belanja"] = (
+                focus_index_belanja + 1
+            ) % len(focus_sections_belanja)
             st.rerun()
 
-    with st.expander("📋 RINGKASAN KESELURUHAN", expanded=False):
-        for q in pilih_quarter:
-            df_q = df_akhir[df_akhir["Quarter"] == q]
-            with st.expander(f"Tempoh {q}", expanded=True):
-                col_k1, col_k2, col_k3, col_k4 = st.columns(4)
-                jenis_list = [
-                    ("Mengurus", "BELANJA MENGURUS", col_k1),
-                    ("Program", "BELANJA PROGRAM", col_k2),
-                    ("Modal", "BELANJA MODAL", col_k3),
-                    ("Hasil", "HASIL", col_k4)
-                ]
-                for jenis, tajuk, col in jenis_list:
-                    b = df_q[df_q["Jenis_Belanja"] == jenis]["BAJET 2025"].sum()
-                    s = df_q[df_q["Jenis_Belanja"] == jenis]["SASARAN Q1-25"].sum()
-                    se = df_q[df_q["Jenis_Belanja"] == jenis]["SEBENAR Q1-25"].sum()
-                    with col:
-                        html(f"""
-                        <div class="card">
-                            <h4 style="text-align:center; color:#2c3e50;">{tajuk}</h4>
-                            <div class="metric-row">
-                                <span class="metric-label">Bajet</span>
-                                <span style="font-weight:bold; color:#2C7DA6;">{format_nilai(b)}</span>
-                            </div>
-                            <div class="metric-row">
-                                <span class="metric-label">Bajet Qtr</span>
-                                <span style="font-weight:bold; color:#E08E4E;">{format_nilai(s)}</span>
-                            </div>
-                            <div class="metric-row">
-                                <span class="metric-label">Sebenar</span>
-                                <span style="font-weight:bold; color:#2E8B6D;">{format_nilai(se)}</span>
-                            </div>
-                        </div>
-                        """)
+    html(f"""
+    <div class="focus-page-indicator">
+        {focus_index_belanja + 1} / {len(focus_sections_belanja)}
+    </div>
+    """)
 
-    with st.expander("📊 CARTA 1: PERBANDINGAN  KATEGORI", expanded=False):
-        df_chart = df_akhir.copy()
-        df_chart["BAJET_JT"] = df_chart["BAJET 2025"] / 1_000_000
-        df_chart["SASARAN_JT"] = df_chart["SASARAN Q1-25"] / 1_000_000
-        df_chart["SEBENAR_JT"] = df_chart["SEBENAR Q1-25"] / 1_000_000
+    if focus_index_belanja == 0:
+        st.markdown("### 🚦 STATUS PRESTASI PTJ")
 
-        if len(pilih_quarter) > 1:
-            cols = st.columns(len(pilih_quarter))
-            for i, q in enumerate(pilih_quarter):
-                df_q = df_chart[df_chart["Quarter"] == q]
-                df_c1 = df_q.groupby("Kategori", as_index=False).agg({
-                    "BAJET_JT": "sum",
-                    "SASARAN_JT": "sum",
-                    "SEBENAR_JT": "sum"
-                })
-                with cols[i]:
-                    st.markdown(f"**Tempoh {q}**")
-                    fig = px.bar(
-                        df_c1,
-                        x="Kategori",
-                        y=["BAJET_JT", "SASARAN_JT", "SEBENAR_JT"],
-                        barmode="group",
-                        height=620,
-                        labels={
-                            "Kategori": "Kategori",
-                            "value": "Nilai",
-                            "variable": "Jenis"
-                        },
-                        color_discrete_sequence=["#2C7DA6", "#E08E4E", "#2E8B6D"]
-                    )
-                    for trace in fig.data:
-                        kemas_label_bajet(trace)
-                        trace.text = [format_nilai(x * 1_000_000) for x in trace.y]
-                    apply_chart_text_style(fig, size=11, angle=-15)
-                    st.plotly_chart(fig, use_container_width=True)
-        else:
-            df_c1 = df_chart.groupby("Kategori", as_index=False).agg({
-                "BAJET_JT": "sum",
-                "SASARAN_JT": "sum",
-                "SEBENAR_JT": "sum"
-            })
-            fig1 = px.bar(
-                df_c1,
-                x="Kategori",
-                y=["BAJET_JT", "SASARAN_JT", "SEBENAR_JT"],
-                barmode="group",
-                height=650,
-                labels={
-                    "Kategori": "Kategori",
-                    "value": "Nilai",
-                    "variable": "Jenis"
-                },
-                color_discrete_sequence=["#2C7DA6", "#E08E4E", "#2E8B6D"]
-            )
-            for trace in fig1.data:
-                kemas_label_bajet(trace)
-                trace.text = [format_nilai(x * 1_000_000) for x in trace.y]
-            apply_chart_text_style(fig1, size=12, angle=0)
-            st.plotly_chart(fig1, use_container_width=True)
-
-    with st.expander("📊 CARTA 2: PERBANDINGAN SEBENAR 03-2026 VS 03-2025", expanded=False):
-        # =======================
-        # CARTA 2 - COMPARISON DALAM SATU FAIL EXCEL
-        # Fail: JPKA_ANALISA PK CIDB 03-2026.xlsx
-        # Column semasa : SEBENAR Q1-25 / SEBENAR 03-2026
-        # Column sebelum: SEBENAR 03-2025
-        # =======================
-        df_compare = df_akhir.copy()
-
-        if "SEBENAR 03-2025" not in df_compare.columns:
-            st.warning("Column SEBENAR 03-2025 tidak dijumpai dalam data Excel.")
-        else:
-            nilai_2026 = pd.to_numeric(
-                df_compare["SEBENAR Q1-25"],
-                errors="coerce"
-            ).fillna(0).sum()
-
-            nilai_2025 = pd.to_numeric(
-                df_compare["SEBENAR 03-2025"],
-                errors="coerce"
-            ).fillna(0).sum()
-
-            df_total_chart = pd.DataFrame({
-                "Tempoh": ["03-2025", "03-2026"],
-                "Jumlah Sebenar": [nilai_2025, nilai_2026]
-            })
-
-            fig_total = px.bar(
-                df_total_chart,
-                x="Tempoh",
-                y="Jumlah Sebenar",
-                labels={
-                    "Jumlah Sebenar": "Jumlah Sebenar (RM)",
-                    "Tempoh": "Tempoh"
-                },
-                text=df_total_chart["Jumlah Sebenar"].apply(format_nilai)
-            )
-
-            warna_carta2 = ["#9CA3AF", "#2E8B6D"]
-
-            fig_total.update_traces(
-                marker_color=warna_carta2,
-                text=df_total_chart["Jumlah Sebenar"].apply(format_nilai)
-            )
-
-            # DOTTED untuk bar tahun sebelum (03-2025)
-            fig_total.update_traces(
-                marker_pattern_shape=[".", ""],
-                marker_pattern_fgcolor=["white", "rgba(0,0,0,0)"],
-                marker_pattern_size=[7, 0],
-                marker_pattern_solidity=[0.25, 0]
-            )
-
-            apply_chart_text_style(fig_total, size=12, angle=0)
-
-            # =======================
-            # NOTA PERBANDINGAN
-            # Formula:
-            # ((SEBENAR 03-2026 / SEBENAR 03-2025) * 100) - 100
-            # =======================
-            if nilai_2025 != 0:
-                peratus_banding = (nilai_2026 / nilai_2025) * 100
-                gauge_delta = peratus_banding - 100
-
-                if gauge_delta > 0:
-                    label_banding = f"+{gauge_delta:.0f}%"
-                    warna_gauge = "#16a34a"
-                    arah_label = "meningkat"
-                elif gauge_delta < 0:
-                    label_banding = f"{gauge_delta:.0f}%"
-                    warna_gauge = "#dc2626"
-                    arah_label = "menurun"
-                else:
-                    label_banding = "0%"
-                    warna_gauge = "#f59e0b"
-                    arah_label = "tiada perubahan"
-            else:
-                label_banding = "#DIV/0!"
-                warna_gauge = "#64748b"
-                arah_label = "tidak dapat dikira"
-
-            y_max_chart = max(
-                pd.to_numeric(df_total_chart["Jumlah Sebenar"], errors="coerce").fillna(0).max(),
-                1
-            )
-
-            fig_total.add_annotation(
-                x=0.5,
-                y=y_max_chart * 1.14,
-                xref="paper",
-                yref="y",
-                text=f"03-2026 berbanding 03-2025: {label_banding} ({arah_label})",
-                showarrow=False,
-                font=dict(
-                    size=15,
-                    color=warna_gauge,
-                    family="Arial Black"
-                ),
-                bgcolor="rgba(255,255,255,0.92)",
-                bordercolor=warna_gauge,
-                borderwidth=1.5,
-                borderpad=8
-            )
-
-            fig_total.update_layout(
-                height=650,
-                xaxis_title="Tempoh",
-                yaxis_title="Jumlah Sebenar (RM)",
-                margin=dict(t=150, b=100, l=90, r=90),
-                template="plotly_white"
-            )
-
-            st.plotly_chart(fig_total, use_container_width=True)
-
-            df_compare_show = pd.DataFrame({
-                "Perkara": [
-                    "Sebenar 03-2025",
-                    "Sebenar 03-2026",
-                    "Perubahan RM",
-                    "Perubahan %"
-                ],
-                "Nilai": [
-                    format_comma(nilai_2025),
-                    format_comma(nilai_2026),
-                    format_comma(nilai_2026 - nilai_2025),
-                    label_banding
-                ]
-            })
-
-            st.dataframe(
-                df_compare_show,
-                use_container_width=True,
-                hide_index=True
-            )
-
-    with st.expander("📊 CARTA 3: PRESTASI  ITEM", expanded=False):
-        if len(pilih_quarter) > 1:
-            cols = st.columns(len(pilih_quarter))
-            for i, q in enumerate(pilih_quarter):
-                df_q = df_akhir[df_akhir["Quarter"] == q]
-                df_c2 = (
-                    df_q.groupby("DESC", as_index=False)
-                    .agg({"SASARAN Q1-25": "sum", "SEBENAR Q1-25": "sum"})
-                    .sort_values("SEBENAR Q1-25", ascending=False)
-                    .head(20)
-                )
-                with cols[i]:
-                    st.markdown(f"**Tempoh {q}**")
-                    fig2 = px.bar(
-                        df_c2,
-                        y="DESC",
-                        x=["SASARAN Q1-25", "SEBENAR Q1-25"],
-                        orientation="h",
-                        barmode="group",
-                        height=760,
-                        labels={
-                            "DESC": "Item",
-                            "value": "Nilai",
-                            "variable": "Jenis"
-                        },
-                        color_discrete_sequence=["#E08E4E", "#2E8B6D"]
-                    )
-                    for trace in fig2.data:
-                        kemas_label_bajet(trace)
-                        trace.text = [format_nilai(x) for x in trace.x]
-                    apply_chart_text_style(fig2, size=10, angle=0)
-                    max_x = max([max(list(t.x)) for t in fig2.data if len(list(t.x)) > 0]) if fig2.data else 0
-                    fig2.update_layout(
-                        yaxis=dict(categoryorder="array", categoryarray=df_c2["DESC"].tolist()),
-                        xaxis_range=[0, max_x * 1.25 if max_x else None]
-                    )
-                    st.plotly_chart(fig2, use_container_width=True)
-        else:
-            df_c2 = (
-                df_akhir.groupby("DESC", as_index=False)
-                .agg({"SASARAN Q1-25": "sum", "SEBENAR Q1-25": "sum"})
-                .sort_values("SEBENAR Q1-25", ascending=False)
-                .head(20)
-            )
-            fig2 = px.bar(
-                df_c2,
-                y="DESC",
-                x=["SASARAN Q1-25", "SEBENAR Q1-25"],
-                orientation="h",
-                barmode="group",
-                height=760,
-                labels={
-                    "DESC": "Item",
-                    "value": "Nilai",
-                    "variable": "Jenis"
-                },
-                color_discrete_sequence=["#E08E4E", "#2E8B6D"]
-            )
-            for trace in fig2.data:
-                kemas_label_bajet(trace)
-                trace.text = [format_nilai(x) for x in trace.x]
-            apply_chart_text_style(fig2, size=12, angle=0)
-            max_x = max([max(list(t.x)) for t in fig2.data if len(list(t.x)) > 0]) if fig2.data else 0
-            fig2.update_layout(
-                yaxis=dict(categoryorder="array", categoryarray=df_c2["DESC"].tolist()),
-                xaxis_range=[0, max_x * 1.25 if max_x else None]
-            )
-            st.plotly_chart(fig2, use_container_width=True)
-
-
-
-    with st.expander("📊 CARTA 4: KOD ITEM", expanded=False):
-        df_by_kod_item = (
-            df_akhir.groupby(["KOD1"], as_index=False)
-            .agg({
-                "SEBENAR Q1-25": "sum"
-            })
+        df_akhir["Prestasi_%"] = df_akhir.apply(
+            lambda row: hitung_prestasi(row["SEBENAR Q1-25"], row["SASARAN Q1-25"]),
+            axis=1
         )
 
-        df_by_kod_item["SEBENAR_JT"] = df_by_kod_item["SEBENAR Q1-25"] / 1_000_000
+        df_group = df_akhir.groupby("PTJ1", as_index=False).agg({
+            "BAJET 2025": "sum",
+            "SASARAN Q1-25": "sum",
+            "SEBENAR Q1-25": "sum"
+        })
 
-        df_by_kod_item = (
-            df_by_kod_item
-            .sort_values("SEBENAR Q1-25", ascending=False)
-            .head(25)
+        # Prestasi_% lama dikekalkan untuk status lampu / drilldown.
+        # Formula lama: Sebenar / Sasaran
+        df_group["Prestasi_%"] = df_group.apply(
+            lambda row: hitung_prestasi(row["SEBENAR Q1-25"], row["SASARAN Q1-25"]),
+            axis=1
         )
 
-        # Warna selang-seli soft & pekat ala 3D corporate
-        warna_bars_kod_item = []
-        for i in range(len(df_by_kod_item)):
-            if i % 2 == 0:
-                warna_bars_kod_item.append("rgba(125,211,252,0.78)")  # soft blue
-            else:
-                warna_bars_kod_item.append("rgba(14,165,233,0.95)")   # deep blue
+        # Formula baharu untuk Carta 4:
+        # % Prestasi   = SEBENAR / BAJET
+        # % Sasaran    = SASARAN / BAJET
+        # % Pencapaian = SEBENAR / SASARAN
 
-        fig_by_kod_item = px.bar(
-            df_by_kod_item,
-            y="KOD1",
-            x="SEBENAR_JT",
-            orientation="h",
-            height=850,
-            text=df_by_kod_item["SEBENAR Q1-25"].apply(format_nilai),
-            labels={
-                "KOD1": "Kod Item",
-                "SEBENAR_JT": "Sebenar"
-            }
+        # Jika BAJET kosong / 0:
+        # - Papar nilai graf = 0%
+        # - Papar nota #DIV/0! pada label
+
+        df_group["Nota_DIV0"] = df_group["BAJET 2025"].apply(
+            lambda x: "#DIV/0!" if pd.to_numeric(x, errors="coerce") in [0, 0.0] else ""
         )
 
-        fig_by_kod_item.update_traces(
-            marker_color=warna_bars_kod_item
+        df_group["% Prestasi"] = df_group.apply(
+            lambda row: 0
+            if pd.to_numeric(row["BAJET 2025"], errors="coerce") in [0, 0.0]
+            else hitung_prestasi(row["SEBENAR Q1-25"], row["BAJET 2025"]),
+            axis=1
         )
 
-        fig_by_kod_item.update_traces(
-            textposition="outside",
-            cliponaxis=False,
-            constraintext="none",
-            textfont=dict(
-                size=11,
-                color="#0f172a",
-                family="Arial Black"
-            ),
-            marker=dict(
-                line=dict(
-                    color="rgba(255,255,255,0.78)",
-                    width=1.5
-                )
-            ),
-            opacity=0.96,
-            name="Sebenar",
-
-            # effect ala 3D/glow
-            hovertemplate="<b>%{y}</b><br>Sebenar: %{text}<extra></extra>"
+        df_group["% Sasaran"] = df_group.apply(
+            lambda row: 0
+            if pd.to_numeric(row["BAJET 2025"], errors="coerce") in [0, 0.0]
+            else hitung_prestasi(row["SASARAN Q1-25"], row["BAJET 2025"]),
+            axis=1
         )
 
-        max_x_kod_item = (
-            df_by_kod_item["SEBENAR_JT"].max()
-            if not df_by_kod_item.empty
-            else 0
-        )
-
-        fig_by_kod_item.update_layout(
-            title=" ",
-            yaxis=dict(
-                categoryorder="array",
-                categoryarray=df_by_kod_item["KOD1"].tolist()
-            ),
-            xaxis_range=[0, max_x_kod_item * 1.30 if max_x_kod_item else None],
-            xaxis_title="Sebenar",
-            yaxis_title="Kod Item",
-            legend_title_text="Jenis",
-            template="plotly_white",
-            paper_bgcolor="rgba(255,255,255,0)",
-            plot_bgcolor="rgba(241,245,249,0.82)",
-            font=dict(
-                family="Arial",
-                color="#334155"
-            ),
-            title_font=dict(
-                size=22,
-                color="#0f172a",
-                family="Arial Black"
-            ),
-            margin=dict(t=120, b=120, l=180, r=120),
-            showlegend=False
-        )
-
-        st.plotly_chart(fig_by_kod_item, use_container_width=True)
-
-    with st.expander("📈 CARTA 5: PRESTASI PTJ", expanded=False):
-
-        df_c6 = df_group.copy()
-
-        df_c6["BAJET 2025"] = pd.to_numeric(
-            df_c6["BAJET 2025"],
-            errors="coerce"
-        ).fillna(0)
-
-        df_c6["SASARAN Q1-25"] = pd.to_numeric(
-            df_c6["SASARAN Q1-25"],
-            errors="coerce"
-        ).fillna(0)
-
-        df_c6["SEBENAR Q1-25"] = pd.to_numeric(
-            df_c6["SEBENAR Q1-25"],
-            errors="coerce"
-        ).fillna(0)
-
-        # Line merah = Pencapaian (%) pada axis kanan.
-        df_c6["% Pencapaian"] = df_c6.apply(
-            lambda row: None
-            if row["SASARAN Q1-25"] <= 0
+        df_group["% Pencapaian"] = df_group.apply(
+            lambda row: 0
+            if pd.to_numeric(row["SASARAN Q1-25"], errors="coerce") in [0, 0.0]
             else hitung_prestasi(row["SEBENAR Q1-25"], row["SASARAN Q1-25"]),
             axis=1
         )
 
-        # Bar hijau = Jumlah Sebenar.
-        df_c6["Jumlah Sebenar"] = df_c6["SEBENAR Q1-25"]
+        hebat = len(df_group[df_group["Prestasi_%"] > 95])
+        bagus = len(df_group[(df_group["Prestasi_%"] >= 85) & (df_group["Prestasi_%"] <= 94.99)])
+        usaha = len(df_group[df_group["Prestasi_%"] < 85])
+        total = len(df_group)
 
-        # Line kuning = Nilai Sasaran, bukan peratus.
-        df_c6["Jumlah Sasaran"] = df_c6["SASARAN Q1-25"]
+        total_bajet = df_akhir["BAJET 2025"].sum()
+        total_sebenar = df_akhir["SEBENAR Q1-25"].sum()
+        total_sasaran = df_akhir["SASARAN Q1-25"].sum()
 
-        # =====================================================
-        # SORT CARTA 6
-        # Lebih stabil daripada klik legend untuk hide/show.
-        # User boleh pilih nilai yang mahu dijadikan asas susunan.
-        # =====================================================
-        sort_col_c6a, sort_col_c6b = st.columns([2, 1])
+        # Area traffic light:
+        # SASARAN    = Sasaran / Bajet
+        # PRESTASI   = Sebenar / Bajet
+        # PENCAPAIAN = Sebenar / Sasaran
+        sasaran_pct = hitung_prestasi(total_sasaran, total_bajet)
+        prestasi_pct = hitung_prestasi(total_sebenar, total_bajet)
+        pencapaian = hitung_prestasi(total_sebenar, total_sasaran)
 
-        with sort_col_c6a:
-            sort_carta6 = st.radio(
-                "Sort Carta 6 ikut",
-                [
-                    "Jumlah Sebenar",
-                    "Sasaran Nilai",
-                    "Pencapaian (%)"
-                ],
-                horizontal=True,
-                key="sort_carta6_belanja_hasil"
+        sasaran_int = round(sasaran_pct)
+        prestasi_int = round(prestasi_pct)
+        pencapaian_int = round(pencapaian)
+
+        col1, col2, col3, col4 = st.columns([1, 1, 1, 1.2])
+
+        if "show_drill_belanja" not in st.session_state:
+            st.session_state.show_drill_belanja = None
+            st.session_state.drill_title_belanja = ""
+
+        with col1:
+            html("""
+            <div class="traffic-range-jpka">&gt; 95%</div>
+            """)
+            if st.button(f"{hebat}", key="btn_jpka_hijau"):
+                st.session_state.show_drill_belanja = "hebat"
+                st.session_state.drill_title_belanja = "Senarai PTJ Hebat (> 95%)"
+                st.rerun()
+            html("""
+            <div class="traffic-caption-jpka" style="color:#07912b;">Hebat!</div>
+            """)
+
+        with col2:
+            html("""
+            <div class="traffic-range-jpka">85% - 94.99%</div>
+            """)
+            if st.button(f"{bagus}", key="btn_jpka_kuning"):
+                st.session_state.show_drill_belanja = "bagus"
+                st.session_state.drill_title_belanja = "Senarai PTJ Bagus (85% - 94.99%)"
+                st.rerun()
+            html("""
+            <div class="traffic-caption-jpka" style="color:#b98a00;">Bagus!</div>
+            """)
+
+        with col3:
+            html("""
+            <div class="traffic-range-jpka">&lt; 85%</div>
+            """)
+            if st.button(f"{usaha}", key="btn_jpka_merah"):
+                st.session_state.show_drill_belanja = "usaha"
+                st.session_state.drill_title_belanja = "Senarai PTJ Usaha Lagi (< 85%)"
+                st.rerun()
+            html("""
+            <div class="traffic-caption-jpka" style="color:#a51218;">Usaha lagi!</div>
+            """)
+
+        with col4:
+            html('<div class="jpka-total-wrap">')
+            if st.button(f"{total}", key="btn_jumlah_ptj_jpka"):
+                st.session_state.show_drill_belanja = "semua"
+                st.session_state.drill_title_belanja = "Senarai Keseluruhan PTJ"
+                st.rerun()
+
+            html(f"""
+            <div class="jpka-total-label">Jumlah PTJ</div>
+            <div class="jpka-total-divider"></div>
+            <p class="jpka-formula-line" title="Formula: Bajet Qtr / Bajet Tahunan">
+                <strong>SASARAN</strong> {sasaran_int}%
+            </p>
+            <p class="jpka-formula-line" title="Formula: Sebenar / Bajet Tahunan">
+                <strong>PRESTASI</strong> {prestasi_int}%
+            </p>
+            <p class="jpka-formula-highlight" title="Formula: Prestasi / Sasaran">
+                PENCAPAIAN {pencapaian_int}%
+            </p>
+            </div>
+            """)
+
+        if st.session_state.show_drill_belanja:
+            st.subheader(st.session_state.drill_title_belanja)
+            if st.session_state.show_drill_belanja == "hebat":
+                df_show = df_group[df_group["Prestasi_%"] > 95].sort_values("Prestasi_%", ascending=False)
+            elif st.session_state.show_drill_belanja == "bagus":
+                df_show = df_group[
+                    (df_group["Prestasi_%"] >= 85) &
+                    (df_group["Prestasi_%"] <= 94.99)
+                ].sort_values("Prestasi_%", ascending=False)
+            elif st.session_state.show_drill_belanja == "usaha":
+                df_show = df_group[df_group["Prestasi_%"] < 85].sort_values("Prestasi_%", ascending=False)
+            else:
+                # Klik Jumlah PTJ: papar semua PTJ tanpa tapisan traffic light.
+                df_show = df_group.sort_values("Prestasi_%", ascending=False)
+
+            if not df_show.empty:
+                df_show_list = df_show[[
+                    "PTJ1",
+                    "BAJET 2025",
+                    "SASARAN Q1-25",
+                    "SEBENAR Q1-25",
+                    "Prestasi_%"
+                ]].copy()
+
+                df_show_list = df_show_list.rename(columns={
+                    "PTJ1": "PTJ",
+                    "BAJET 2025": "Bajet Tahunan",
+                    "SASARAN Q1-25": "Bajet Qtr",
+                    "SEBENAR Q1-25": "Sebenar",
+                    "Prestasi_%": "Pencapaian (%)"
+                })
+
+                df_show_list["Bajet Tahunan"] = df_show_list["Bajet Tahunan"].apply(format_comma)
+                df_show_list["Bajet Qtr"] = df_show_list["Bajet Qtr"].apply(format_comma)
+                df_show_list["Sebenar"] = df_show_list["Sebenar"].apply(format_comma)
+                df_show_list["Pencapaian (%)"] = df_show_list["Pencapaian (%)"].map(lambda x: f"{x:,.2f}%")
+
+                st.dataframe(
+                    df_show_list,
+                    use_container_width=True,
+                    hide_index=True
+                )
+            else:
+                st.info("Tiada rekod untuk kategori ini.")
+
+            if st.button("❌ Tutup Senarai", type="primary"):
+                st.session_state.show_drill_belanja = None
+                st.rerun()
+
+    if focus_index_belanja == 1:
+        with st.expander("📋 RINGKASAN KESELURUHAN", expanded=True):
+            for q in pilih_quarter:
+                df_q = df_akhir[df_akhir["Quarter"] == q]
+                with st.expander(f"Tempoh {q}", expanded=True):
+                    col_k1, col_k2, col_k3, col_k4 = st.columns(4)
+                    jenis_list = [
+                        ("Mengurus", "BELANJA MENGURUS", col_k1),
+                        ("Program", "BELANJA PROGRAM", col_k2),
+                        ("Modal", "BELANJA MODAL", col_k3),
+                        ("Hasil", "HASIL", col_k4)
+                    ]
+                    for jenis, tajuk, col in jenis_list:
+                        b = df_q[df_q["Jenis_Belanja"] == jenis]["BAJET 2025"].sum()
+                        s = df_q[df_q["Jenis_Belanja"] == jenis]["SASARAN Q1-25"].sum()
+                        se = df_q[df_q["Jenis_Belanja"] == jenis]["SEBENAR Q1-25"].sum()
+                        with col:
+                            html(f"""
+                            <div class="card">
+                                <h4 style="text-align:center; color:#2c3e50;">{tajuk}</h4>
+                                <div class="metric-row">
+                                    <span class="metric-label">Bajet</span>
+                                    <span style="font-weight:bold; color:#2C7DA6;">{format_nilai(b)}</span>
+                                </div>
+                                <div class="metric-row">
+                                    <span class="metric-label">Bajet Qtr</span>
+                                    <span style="font-weight:bold; color:#E08E4E;">{format_nilai(s)}</span>
+                                </div>
+                                <div class="metric-row">
+                                    <span class="metric-label">Sebenar</span>
+                                    <span style="font-weight:bold; color:#2E8B6D;">{format_nilai(se)}</span>
+                                </div>
+                            </div>
+                            """)
+
+    if focus_index_belanja == 2:
+        with st.expander("📊 CARTA 1: PERBANDINGAN  KATEGORI", expanded=True):
+            df_chart = df_akhir.copy()
+            df_chart["BAJET_JT"] = df_chart["BAJET 2025"] / 1_000_000
+            df_chart["SASARAN_JT"] = df_chart["SASARAN Q1-25"] / 1_000_000
+            df_chart["SEBENAR_JT"] = df_chart["SEBENAR Q1-25"] / 1_000_000
+
+            if len(pilih_quarter) > 1:
+                cols = st.columns(len(pilih_quarter))
+                for i, q in enumerate(pilih_quarter):
+                    df_q = df_chart[df_chart["Quarter"] == q]
+                    df_c1 = df_q.groupby("Kategori", as_index=False).agg({
+                        "BAJET_JT": "sum",
+                        "SASARAN_JT": "sum",
+                        "SEBENAR_JT": "sum"
+                    })
+                    with cols[i]:
+                        st.markdown(f"**Tempoh {q}**")
+                        fig = px.bar(
+                            df_c1,
+                            x="Kategori",
+                            y=["BAJET_JT", "SASARAN_JT", "SEBENAR_JT"],
+                            barmode="group",
+                            height=620,
+                            labels={
+                                "Kategori": "Kategori",
+                                "value": "Nilai",
+                                "variable": "Jenis"
+                            },
+                            color_discrete_sequence=["#2C7DA6", "#E08E4E", "#2E8B6D"]
+                        )
+                        for trace in fig.data:
+                            kemas_label_bajet(trace)
+                            trace.text = [format_nilai(x * 1_000_000) for x in trace.y]
+                        apply_chart_text_style(fig, size=11, angle=-15)
+                        st.plotly_chart(fig, use_container_width=True)
+            else:
+                df_c1 = df_chart.groupby("Kategori", as_index=False).agg({
+                    "BAJET_JT": "sum",
+                    "SASARAN_JT": "sum",
+                    "SEBENAR_JT": "sum"
+                })
+                fig1 = px.bar(
+                    df_c1,
+                    x="Kategori",
+                    y=["BAJET_JT", "SASARAN_JT", "SEBENAR_JT"],
+                    barmode="group",
+                    height=650,
+                    labels={
+                        "Kategori": "Kategori",
+                        "value": "Nilai",
+                        "variable": "Jenis"
+                    },
+                    color_discrete_sequence=["#2C7DA6", "#E08E4E", "#2E8B6D"]
+                )
+                for trace in fig1.data:
+                    kemas_label_bajet(trace)
+                    trace.text = [format_nilai(x * 1_000_000) for x in trace.y]
+                apply_chart_text_style(fig1, size=12, angle=0)
+                st.plotly_chart(fig1, use_container_width=True)
+
+    if focus_index_belanja == 3:
+        with st.expander("📊 CARTA 2: PERBANDINGAN SEBENAR 03-2026 VS 03-2025", expanded=True):
+            # =======================
+            # CARTA 2 - COMPARISON DALAM SATU FAIL EXCEL
+            # Fail: JPKA_ANALISA PK CIDB 03-2026.xlsx
+            # Column semasa : SEBENAR Q1-25 / SEBENAR 03-2026
+            # Column sebelum: SEBENAR 03-2025
+            # =======================
+            df_compare = df_akhir.copy()
+
+            if "SEBENAR 03-2025" not in df_compare.columns:
+                st.warning("Column SEBENAR 03-2025 tidak dijumpai dalam data Excel.")
+            else:
+                nilai_2026 = pd.to_numeric(
+                    df_compare["SEBENAR Q1-25"],
+                    errors="coerce"
+                ).fillna(0).sum()
+
+                nilai_2025 = pd.to_numeric(
+                    df_compare["SEBENAR 03-2025"],
+                    errors="coerce"
+                ).fillna(0).sum()
+
+                df_total_chart = pd.DataFrame({
+                    "Tempoh": ["03-2025", "03-2026"],
+                    "Jumlah Sebenar": [nilai_2025, nilai_2026]
+                })
+
+                fig_total = px.bar(
+                    df_total_chart,
+                    x="Tempoh",
+                    y="Jumlah Sebenar",
+                    labels={
+                        "Jumlah Sebenar": "Jumlah Sebenar (RM)",
+                        "Tempoh": "Tempoh"
+                    },
+                    text=df_total_chart["Jumlah Sebenar"].apply(format_nilai)
+                )
+
+                warna_carta2 = ["#9CA3AF", "#2E8B6D"]
+
+                fig_total.update_traces(
+                    marker_color=warna_carta2,
+                    text=df_total_chart["Jumlah Sebenar"].apply(format_nilai)
+                )
+
+                # DOTTED untuk bar tahun sebelum (03-2025)
+                fig_total.update_traces(
+                    marker_pattern_shape=[".", ""],
+                    marker_pattern_fgcolor=["white", "rgba(0,0,0,0)"],
+                    marker_pattern_size=[7, 0],
+                    marker_pattern_solidity=[0.25, 0]
+                )
+
+                apply_chart_text_style(fig_total, size=12, angle=0)
+
+                # =======================
+                # NOTA PERBANDINGAN
+                # Formula:
+                # ((SEBENAR 03-2026 / SEBENAR 03-2025) * 100) - 100
+                # =======================
+                if nilai_2025 != 0:
+                    peratus_banding = (nilai_2026 / nilai_2025) * 100
+                    gauge_delta = peratus_banding - 100
+
+                    if gauge_delta > 0:
+                        label_banding = f"+{gauge_delta:.0f}%"
+                        warna_gauge = "#16a34a"
+                        arah_label = "meningkat"
+                    elif gauge_delta < 0:
+                        label_banding = f"{gauge_delta:.0f}%"
+                        warna_gauge = "#dc2626"
+                        arah_label = "menurun"
+                    else:
+                        label_banding = "0%"
+                        warna_gauge = "#f59e0b"
+                        arah_label = "tiada perubahan"
+                else:
+                    label_banding = "#DIV/0!"
+                    warna_gauge = "#64748b"
+                    arah_label = "tidak dapat dikira"
+
+                y_max_chart = max(
+                    pd.to_numeric(df_total_chart["Jumlah Sebenar"], errors="coerce").fillna(0).max(),
+                    1
+                )
+
+                fig_total.add_annotation(
+                    x=0.5,
+                    y=y_max_chart * 1.14,
+                    xref="paper",
+                    yref="y",
+                    text=f"03-2026 berbanding 03-2025: {label_banding} ({arah_label})",
+                    showarrow=False,
+                    font=dict(
+                        size=15,
+                        color=warna_gauge,
+                        family="Arial Black"
+                    ),
+                    bgcolor="rgba(255,255,255,0.92)",
+                    bordercolor=warna_gauge,
+                    borderwidth=1.5,
+                    borderpad=8
+                )
+
+                fig_total.update_layout(
+                    height=650,
+                    xaxis_title="Tempoh",
+                    yaxis_title="Jumlah Sebenar (RM)",
+                    margin=dict(t=150, b=100, l=90, r=90),
+                    template="plotly_white"
+                )
+
+                st.plotly_chart(fig_total, use_container_width=True)
+
+                df_compare_show = pd.DataFrame({
+                    "Perkara": [
+                        "Sebenar 03-2025",
+                        "Sebenar 03-2026",
+                        "Perubahan RM",
+                        "Perubahan %"
+                    ],
+                    "Nilai": [
+                        format_comma(nilai_2025),
+                        format_comma(nilai_2026),
+                        format_comma(nilai_2026 - nilai_2025),
+                        label_banding
+                    ]
+                })
+
+                st.dataframe(
+                    df_compare_show,
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+    if focus_index_belanja == 4:
+        with st.expander("📊 CARTA 3: PRESTASI  ITEM", expanded=True):
+            if len(pilih_quarter) > 1:
+                cols = st.columns(len(pilih_quarter))
+                for i, q in enumerate(pilih_quarter):
+                    df_q = df_akhir[df_akhir["Quarter"] == q]
+                    df_c2 = (
+                        df_q.groupby("DESC", as_index=False)
+                        .agg({"SASARAN Q1-25": "sum", "SEBENAR Q1-25": "sum"})
+                        .sort_values("SEBENAR Q1-25", ascending=False)
+                        .head(20)
+                    )
+                    with cols[i]:
+                        st.markdown(f"**Tempoh {q}**")
+                        fig2 = px.bar(
+                            df_c2,
+                            y="DESC",
+                            x=["SASARAN Q1-25", "SEBENAR Q1-25"],
+                            orientation="h",
+                            barmode="group",
+                            height=760,
+                            labels={
+                                "DESC": "Item",
+                                "value": "Nilai",
+                                "variable": "Jenis"
+                            },
+                            color_discrete_sequence=["#E08E4E", "#2E8B6D"]
+                        )
+                        for trace in fig2.data:
+                            kemas_label_bajet(trace)
+                            trace.text = [format_nilai(x) for x in trace.x]
+                        apply_chart_text_style(fig2, size=10, angle=0)
+                        max_x = max([max(list(t.x)) for t in fig2.data if len(list(t.x)) > 0]) if fig2.data else 0
+                        fig2.update_layout(
+                            yaxis=dict(categoryorder="array", categoryarray=df_c2["DESC"].tolist()),
+                            xaxis_range=[0, max_x * 1.25 if max_x else None]
+                        )
+                        st.plotly_chart(fig2, use_container_width=True)
+            else:
+                df_c2 = (
+                    df_akhir.groupby("DESC", as_index=False)
+                    .agg({"SASARAN Q1-25": "sum", "SEBENAR Q1-25": "sum"})
+                    .sort_values("SEBENAR Q1-25", ascending=False)
+                    .head(20)
+                )
+                fig2 = px.bar(
+                    df_c2,
+                    y="DESC",
+                    x=["SASARAN Q1-25", "SEBENAR Q1-25"],
+                    orientation="h",
+                    barmode="group",
+                    height=760,
+                    labels={
+                        "DESC": "Item",
+                        "value": "Nilai",
+                        "variable": "Jenis"
+                    },
+                    color_discrete_sequence=["#E08E4E", "#2E8B6D"]
+                )
+                for trace in fig2.data:
+                    kemas_label_bajet(trace)
+                    trace.text = [format_nilai(x) for x in trace.x]
+                apply_chart_text_style(fig2, size=12, angle=0)
+                max_x = max([max(list(t.x)) for t in fig2.data if len(list(t.x)) > 0]) if fig2.data else 0
+                fig2.update_layout(
+                    yaxis=dict(categoryorder="array", categoryarray=df_c2["DESC"].tolist()),
+                    xaxis_range=[0, max_x * 1.25 if max_x else None]
+                )
+                st.plotly_chart(fig2, use_container_width=True)
+
+
+
+    if focus_index_belanja == 5:
+        with st.expander("📊 CARTA 4: KOD ITEM", expanded=True):
+            df_by_kod_item = (
+                df_akhir.groupby(["KOD1"], as_index=False)
+                .agg({
+                    "SEBENAR Q1-25": "sum"
+                })
             )
 
-        with sort_col_c6b:
-            sort_desc_c6 = st.toggle(
-                "Descending",
-                value=True,
-                key="sort_desc_carta6_belanja_hasil"
+            df_by_kod_item["SEBENAR_JT"] = df_by_kod_item["SEBENAR Q1-25"] / 1_000_000
+
+            df_by_kod_item = (
+                df_by_kod_item
+                .sort_values("SEBENAR Q1-25", ascending=False)
+                .head(25)
             )
 
-        sort_column_map_c6 = {
-            "Jumlah Sebenar": "Jumlah Sebenar",
-            "Sasaran Nilai": "Jumlah Sasaran",
-            "Pencapaian (%)": "% Pencapaian"
-        }
+            # Warna selang-seli soft & pekat ala 3D corporate
+            warna_bars_kod_item = []
+            for i in range(len(df_by_kod_item)):
+                if i % 2 == 0:
+                    warna_bars_kod_item.append("rgba(125,211,252,0.78)")  # soft blue
+                else:
+                    warna_bars_kod_item.append("rgba(14,165,233,0.95)")   # deep blue
 
-        df_c6 = df_c6.sort_values(
-            by=sort_column_map_c6.get(sort_carta6, "Jumlah Sebenar"),
-            ascending=not sort_desc_c6,
-            na_position="last"
-        ).reset_index(drop=True)
-
-        fig6 = go.Figure()
-
-        # Bar Hijau = Jumlah Sebenar, axis kiri.
-        fig6.add_trace(go.Bar(
-            x=df_c6["PTJ1"],
-            y=df_c6["Jumlah Sebenar"],
-            name="Jumlah Sebenar",
-            marker_color="#8ED04F",
-            text=df_c6["Jumlah Sebenar"].apply(short_number),
-            textposition="inside",
-            insidetextanchor="middle",
-            textfont=dict(
-                size=11,
-                color="black",
-                family="Arial"
-            ),
-            yaxis="y",
-            hovertemplate=(
-                "<b>%{x}</b><br>"
-                "Jumlah Sebenar: %{text}<br>"
-                "<extra></extra>"
-            )
-        ))
-
-        # Line Kuning = Jumlah Sasaran, axis kiri.
-        fig6.add_trace(go.Scatter(
-            x=df_c6["PTJ1"],
-            y=df_c6["Jumlah Sasaran"],
-            name="Sasaran Nilai",
-            line=dict(color="#FFB000", width=3, dash="dash"),
-            marker=dict(size=7),
-            mode="lines+markers+text",
-            text=df_c6["Jumlah Sasaran"].apply(short_number),
-            textposition="top center",
-            textfont=dict(
-                size=10,
-                color="black",
-                family="Arial"
-            ),
-            yaxis="y",
-            hovertemplate=(
-                "<b>%{x}</b><br>"
-                "Sasaran Nilai: %{text}<br>"
-                "<extra></extra>"
-            )
-        ))
-
-        # Line Merah = Pencapaian %, axis kanan.
-        fig6.add_trace(go.Scatter(
-            x=df_c6["PTJ1"],
-            y=df_c6["% Pencapaian"],
-            name="Pencapaian (%)",
-            line=dict(color="red", width=4),
-            marker=dict(size=7),
-            mode="lines+markers+text",
-            text=df_c6["% Pencapaian"].apply(
-                lambda x: "" if pd.isna(x) else f"{x:.0f}%"
-            ),
-            textposition="top center",
-            textfont=dict(
-                size=10,
-                color="black",
-                family="Arial"
-            ),
-            yaxis="y2",
-            hovertemplate=(
-                "<b>%{x}</b><br>"
-                "Pencapaian: %{y:.2f}%<br>"
-                "<extra></extra>"
-            )
-        ))
-
-        left_max = max(
-            pd.to_numeric(df_c6["Jumlah Sebenar"], errors="coerce").max(),
-            pd.to_numeric(df_c6["Jumlah Sasaran"], errors="coerce").max()
-        )
-
-        right_max = pd.to_numeric(
-            df_c6["% Pencapaian"],
-            errors="coerce"
-        ).max()
-
-        fig6.update_layout(
-            height=780,
-            template="plotly_white",
-            xaxis=dict(
-                title="PTJ",
-                tickangle=-45,
-                automargin=True
-            ),
-            yaxis=dict(
-                title="Jumlah / Sasaran (RM)",
-                range=[0, left_max * 1.20 if left_max else 1],
-                tickformat=",.0f"
-            ),
-            yaxis2=dict(
-                title="Pencapaian (%)",
-                overlaying="y",
-                side="right",
-                ticksuffix="%",
-                range=[0, right_max * 1.20 if right_max else 100],
-                showgrid=False
-            ),
-            legend=dict(
+            fig_by_kod_item = px.bar(
+                df_by_kod_item,
+                y="KOD1",
+                x="SEBENAR_JT",
                 orientation="h",
-                yanchor="bottom",
-                y=-0.25,
-                xanchor="center",
-                x=0.5
-            ),
-            margin=dict(t=120, b=180, l=90, r=90)
-        )
-
-        fig6.update_traces(
-            cliponaxis=False
-        )
-
-        st.plotly_chart(fig6, use_container_width=True)
-
-
-    with st.expander("📋 SUMMARY KESELURUHAN", expanded=False):
-        summary = df_akhir.groupby(["PTJ1", "Kategori", "DESC", "Quarter"], as_index=False).agg({
-            "BAJET 2025": "sum",
-            "SASARAN Q1-25": "sum",
-            "SEBENAR Q1-25": "sum",
-            "SEBENAR 03-2025": "sum"
-        })
-        summary["Prestasi_%"] = summary.apply(
-            lambda row: hitung_prestasi(row["SEBENAR Q1-25"], row["SASARAN Q1-25"]),
-            axis=1
-        )
-        summary = summary.round(2)
-        summary = rename_summary_columns(summary)
-
-        # Tambah row JUMLAH di bawah sekali.
-        # Belanja & Hasil: jumlahkan semua nilai Bajet, Sasaran dan Sebenar.
-        jumlah_summary = {
-            "PTJ": "JUMLAH",
-            "Kategori": "",
-            "Item": "",
-            "Tempoh": "",
-            "Bajet": pd.to_numeric(summary["Bajet"], errors="coerce").fillna(0).sum(),
-            "Bajet Qtr": pd.to_numeric(summary["Bajet Qtr"], errors="coerce").fillna(0).sum(),
-            "Sebenar 03-2026": pd.to_numeric(summary["Sebenar 03-2026"], errors="coerce").fillna(0).sum(),
-            "Sebenar 03-2025": pd.to_numeric(summary["Sebenar 03-2025"], errors="coerce").fillna(0).sum(),
-            "Prestasi_%": hitung_prestasi(
-                pd.to_numeric(summary["Sebenar 03-2026"], errors="coerce").fillna(0).sum(),
-                pd.to_numeric(summary["Bajet Qtr"], errors="coerce").fillna(0).sum()
+                height=850,
+                text=df_by_kod_item["SEBENAR Q1-25"].apply(format_nilai),
+                labels={
+                    "KOD1": "Kod Item",
+                    "SEBENAR_JT": "Sebenar"
+                }
             )
-        }
 
-        summary = pd.concat(
-            [summary, pd.DataFrame([jumlah_summary])],
-            ignore_index=True
-        )
+            fig_by_kod_item.update_traces(
+                marker_color=warna_bars_kod_item
+            )
 
-        # Paparan summary dengan comma style pada semua nilai numeric.
-        summary_show = dataframe_comma_style(
-            summary,
-            money_cols=["Bajet", "Bajet Qtr", "Sebenar 03-2026", "Sebenar 03-2025"],
-            percent_cols=["Prestasi_%"]
-        )
+            fig_by_kod_item.update_traces(
+                textposition="outside",
+                cliponaxis=False,
+                constraintext="none",
+                textfont=dict(
+                    size=11,
+                    color="#0f172a",
+                    family="Arial Black"
+                ),
+                marker=dict(
+                    line=dict(
+                        color="rgba(255,255,255,0.78)",
+                        width=1.5
+                    )
+                ),
+                opacity=0.96,
+                name="Sebenar",
 
-        st.dataframe(
-            summary_show,
-            use_container_width=True,
-            hide_index=True
-        )
+                # effect ala 3D/glow
+                hovertemplate="<b>%{y}</b><br>Sebenar: %{text}<extra></extra>"
+            )
 
-        # Download kekal raw numeric supaya masih boleh dikira dalam Excel.
-        excel_file = to_excel(summary)
-        st.download_button(
-            "📥 Download Summary sebagai Excel",
-            data=excel_file,
-            file_name=f"Summary_CIDB_{'_'.join(pilih_quarter)}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True
-        )
+            max_x_kod_item = (
+                df_by_kod_item["SEBENAR_JT"].max()
+                if not df_by_kod_item.empty
+                else 0
+            )
+
+            fig_by_kod_item.update_layout(
+                title=" ",
+                yaxis=dict(
+                    categoryorder="array",
+                    categoryarray=df_by_kod_item["KOD1"].tolist()
+                ),
+                xaxis_range=[0, max_x_kod_item * 1.30 if max_x_kod_item else None],
+                xaxis_title="Sebenar",
+                yaxis_title="Kod Item",
+                legend_title_text="Jenis",
+                template="plotly_white",
+                paper_bgcolor="rgba(255,255,255,0)",
+                plot_bgcolor="rgba(241,245,249,0.82)",
+                font=dict(
+                    family="Arial",
+                    color="#334155"
+                ),
+                title_font=dict(
+                    size=22,
+                    color="#0f172a",
+                    family="Arial Black"
+                ),
+                margin=dict(t=120, b=120, l=180, r=120),
+                showlegend=False
+            )
+
+            st.plotly_chart(fig_by_kod_item, use_container_width=True)
+
+    if focus_index_belanja == 6:
+        with st.expander("📈 CARTA 5: PRESTASI PTJ", expanded=True):
+
+            df_c6 = df_group.copy()
+
+            df_c6["BAJET 2025"] = pd.to_numeric(
+                df_c6["BAJET 2025"],
+                errors="coerce"
+            ).fillna(0)
+
+            df_c6["SASARAN Q1-25"] = pd.to_numeric(
+                df_c6["SASARAN Q1-25"],
+                errors="coerce"
+            ).fillna(0)
+
+            df_c6["SEBENAR Q1-25"] = pd.to_numeric(
+                df_c6["SEBENAR Q1-25"],
+                errors="coerce"
+            ).fillna(0)
+
+            # Line merah = Pencapaian (%) pada axis kanan.
+            df_c6["% Pencapaian"] = df_c6.apply(
+                lambda row: None
+                if row["SASARAN Q1-25"] <= 0
+                else hitung_prestasi(row["SEBENAR Q1-25"], row["SASARAN Q1-25"]),
+                axis=1
+            )
+
+            # Bar hijau = Jumlah Sebenar.
+            df_c6["Jumlah Sebenar"] = df_c6["SEBENAR Q1-25"]
+
+            # Line kuning = Nilai Sasaran, bukan peratus.
+            df_c6["Jumlah Sasaran"] = df_c6["SASARAN Q1-25"]
+
+            # =====================================================
+            # SORT CARTA 6
+            # Lebih stabil daripada klik legend untuk hide/show.
+            # User boleh pilih nilai yang mahu dijadikan asas susunan.
+            # =====================================================
+            sort_col_c6a, sort_col_c6b = st.columns([2, 1])
+
+            with sort_col_c6a:
+                sort_carta6 = st.radio(
+                    "Sort Carta 6 ikut",
+                    [
+                        "Jumlah Sebenar",
+                        "Sasaran Nilai",
+                        "Pencapaian (%)"
+                    ],
+                    horizontal=True,
+                    key="sort_carta6_belanja_hasil"
+                )
+
+            with sort_col_c6b:
+                sort_desc_c6 = st.toggle(
+                    "Descending",
+                    value=True,
+                    key="sort_desc_carta6_belanja_hasil"
+                )
+
+            sort_column_map_c6 = {
+                "Jumlah Sebenar": "Jumlah Sebenar",
+                "Sasaran Nilai": "Jumlah Sasaran",
+                "Pencapaian (%)": "% Pencapaian"
+            }
+
+            df_c6 = df_c6.sort_values(
+                by=sort_column_map_c6.get(sort_carta6, "Jumlah Sebenar"),
+                ascending=not sort_desc_c6,
+                na_position="last"
+            ).reset_index(drop=True)
+
+            fig6 = go.Figure()
+
+            # Bar Hijau = Jumlah Sebenar, axis kiri.
+            fig6.add_trace(go.Bar(
+                x=df_c6["PTJ1"],
+                y=df_c6["Jumlah Sebenar"],
+                name="Jumlah Sebenar",
+                marker_color="#8ED04F",
+                text=df_c6["Jumlah Sebenar"].apply(short_number),
+                textposition="inside",
+                insidetextanchor="middle",
+                textfont=dict(
+                    size=11,
+                    color="black",
+                    family="Arial"
+                ),
+                yaxis="y",
+                hovertemplate=(
+                    "<b>%{x}</b><br>"
+                    "Jumlah Sebenar: %{text}<br>"
+                    "<extra></extra>"
+                )
+            ))
+
+            # Line Kuning = Jumlah Sasaran, axis kiri.
+            fig6.add_trace(go.Scatter(
+                x=df_c6["PTJ1"],
+                y=df_c6["Jumlah Sasaran"],
+                name="Sasaran Nilai",
+                line=dict(color="#FFB000", width=3, dash="dash"),
+                marker=dict(size=7),
+                mode="lines+markers+text",
+                text=df_c6["Jumlah Sasaran"].apply(short_number),
+                textposition="top center",
+                textfont=dict(
+                    size=10,
+                    color="black",
+                    family="Arial"
+                ),
+                yaxis="y",
+                hovertemplate=(
+                    "<b>%{x}</b><br>"
+                    "Sasaran Nilai: %{text}<br>"
+                    "<extra></extra>"
+                )
+            ))
+
+            # Line Merah = Pencapaian %, axis kanan.
+            fig6.add_trace(go.Scatter(
+                x=df_c6["PTJ1"],
+                y=df_c6["% Pencapaian"],
+                name="Pencapaian (%)",
+                line=dict(color="red", width=4),
+                marker=dict(size=7),
+                mode="lines+markers+text",
+                text=df_c6["% Pencapaian"].apply(
+                    lambda x: "" if pd.isna(x) else f"{x:.0f}%"
+                ),
+                textposition="top center",
+                textfont=dict(
+                    size=10,
+                    color="black",
+                    family="Arial"
+                ),
+                yaxis="y2",
+                hovertemplate=(
+                    "<b>%{x}</b><br>"
+                    "Pencapaian: %{y:.2f}%<br>"
+                    "<extra></extra>"
+                )
+            ))
+
+            left_max = max(
+                pd.to_numeric(df_c6["Jumlah Sebenar"], errors="coerce").max(),
+                pd.to_numeric(df_c6["Jumlah Sasaran"], errors="coerce").max()
+            )
+
+            right_max = pd.to_numeric(
+                df_c6["% Pencapaian"],
+                errors="coerce"
+            ).max()
+
+            fig6.update_layout(
+                height=780,
+                template="plotly_white",
+                xaxis=dict(
+                    title="PTJ",
+                    tickangle=-45,
+                    automargin=True
+                ),
+                yaxis=dict(
+                    title="Jumlah / Sasaran (RM)",
+                    range=[0, left_max * 1.20 if left_max else 1],
+                    tickformat=",.0f"
+                ),
+                yaxis2=dict(
+                    title="Pencapaian (%)",
+                    overlaying="y",
+                    side="right",
+                    ticksuffix="%",
+                    range=[0, right_max * 1.20 if right_max else 100],
+                    showgrid=False
+                ),
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=-0.25,
+                    xanchor="center",
+                    x=0.5
+                ),
+                margin=dict(t=120, b=180, l=90, r=90)
+            )
+
+            fig6.update_traces(
+                cliponaxis=False
+            )
+
+            st.plotly_chart(fig6, use_container_width=True)
+
+
+    if focus_index_belanja == 7:
+        with st.expander("📋 SUMMARY KESELURUHAN", expanded=True):
+            summary = df_akhir.groupby(["PTJ1", "Kategori", "DESC", "Quarter"], as_index=False).agg({
+                "BAJET 2025": "sum",
+                "SASARAN Q1-25": "sum",
+                "SEBENAR Q1-25": "sum",
+                "SEBENAR 03-2025": "sum"
+            })
+            summary["Prestasi_%"] = summary.apply(
+                lambda row: hitung_prestasi(row["SEBENAR Q1-25"], row["SASARAN Q1-25"]),
+                axis=1
+            )
+            summary = summary.round(2)
+            summary = rename_summary_columns(summary)
+
+            # Tambah row JUMLAH di bawah sekali.
+            # Belanja & Hasil: jumlahkan semua nilai Bajet, Sasaran dan Sebenar.
+            jumlah_summary = {
+                "PTJ": "JUMLAH",
+                "Kategori": "",
+                "Item": "",
+                "Tempoh": "",
+                "Bajet": pd.to_numeric(summary["Bajet"], errors="coerce").fillna(0).sum(),
+                "Bajet Qtr": pd.to_numeric(summary["Bajet Qtr"], errors="coerce").fillna(0).sum(),
+                "Sebenar 03-2026": pd.to_numeric(summary["Sebenar 03-2026"], errors="coerce").fillna(0).sum(),
+                "Sebenar 03-2025": pd.to_numeric(summary["Sebenar 03-2025"], errors="coerce").fillna(0).sum(),
+                "Prestasi_%": hitung_prestasi(
+                    pd.to_numeric(summary["Sebenar 03-2026"], errors="coerce").fillna(0).sum(),
+                    pd.to_numeric(summary["Bajet Qtr"], errors="coerce").fillna(0).sum()
+                )
+            }
+
+            summary = pd.concat(
+                [summary, pd.DataFrame([jumlah_summary])],
+                ignore_index=True
+            )
+
+            # Paparan summary dengan comma style pada semua nilai numeric.
+            summary_show = dataframe_comma_style(
+                summary,
+                money_cols=["Bajet", "Bajet Qtr", "Sebenar 03-2026", "Sebenar 03-2025"],
+                percent_cols=["Prestasi_%"]
+            )
+
+            st.dataframe(
+                summary_show,
+                use_container_width=True,
+                hide_index=True
+            )
+
+            # Download kekal raw numeric supaya masih boleh dikira dalam Excel.
+            excel_file = to_excel(summary)
+            st.download_button(
+                "📥 Download Summary sebagai Excel",
+                data=excel_file,
+                file_name=f"Summary_CIDB_{'_'.join(pilih_quarter)}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True
+            )
 
     st.caption("Tempoh: 03-2026 • Comparison Carta 2 menggunakan column SEBENAR 03-2025 • Prestasi Kewangan CIDB JPKA")
 
