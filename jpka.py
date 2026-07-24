@@ -787,6 +787,179 @@ div[class*="st-key-btn_jumlah_ptj_jpka"] button p {
 </style>
 """, unsafe_allow_html=True)
 
+
+
+# =========================================================
+# FULL SCREEN DASHBOARD - SIDEBAR KEKAL DIPAPARKAN
+# Sama konsep seperti Dashboard Prestasi Program.
+# - Full screen meliputi keseluruhan aplikasi Streamlit.
+# - Sidebar tidak disembunyikan.
+# - Tekan ESC untuk keluar daripada full screen.
+# =========================================================
+st.markdown("""
+<style>
+/* Gunakan keseluruhan ruang skrin tanpa mengecilkan sidebar. */
+.main .block-container,
+section.main .block-container,
+div[data-testid="stMainBlockContainer"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 1.25rem !important;
+    padding-right: 1.25rem !important;
+}
+
+/* Sidebar kekal pada saiz asal semasa full screen. */
+section[data-testid="stSidebar"] {
+    display: block !important;
+    visibility: visible !important;
+}
+
+/* Butang full screen terapung di penjuru kanan atas. */
+#jpka-fullscreen-toggle {
+    position: fixed;
+    top: 0.72rem;
+    right: 4.3rem;
+    z-index: 999999;
+    width: 42px;
+    height: 42px;
+    border: 1px solid rgba(148,163,184,0.40);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.88);
+    color: #0f172a;
+    box-shadow: 0 8px 24px rgba(15,23,42,0.16);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    cursor: pointer;
+    font-size: 21px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.18s ease, box-shadow 0.18s ease,
+                background 0.18s ease;
+}
+
+#jpka-fullscreen-toggle:hover {
+    transform: translateY(-2px) scale(1.04);
+    background: #ffffff;
+    box-shadow: 0 12px 28px rgba(15,23,42,0.22);
+}
+
+#jpka-fullscreen-toggle:active {
+    transform: translateY(1px) scale(0.98);
+}
+
+/* Dalam paparan telefon, rapatkan butang agar tidak bertindih. */
+@media (max-width: 768px) {
+    #jpka-fullscreen-toggle {
+        top: 0.55rem;
+        right: 3.65rem;
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        font-size: 19px;
+    }
+}
+</style>
+""", unsafe_allow_html=True)
+
+# Cipta butang dalam parent Streamlit supaya full screen merangkumi
+# main dashboard dan sidebar sekali. Kod ini tidak mengubah function dashboard.
+components.html(
+    """
+    <script>
+    (function () {
+        const doc = window.parent.document;
+        const buttonId = "jpka-fullscreen-toggle";
+
+        function isFullscreen() {
+            return Boolean(
+                doc.fullscreenElement ||
+                doc.webkitFullscreenElement ||
+                doc.msFullscreenElement
+            );
+        }
+
+        function updateButton(button) {
+            if (!button) return;
+            const active = isFullscreen();
+            button.innerHTML = active ? "⤢" : "⛶";
+            button.title = active
+                ? "Keluar paparan penuh (atau tekan ESC)"
+                : "Paparan penuh";
+            button.setAttribute(
+                "aria-label",
+                active ? "Keluar paparan penuh" : "Paparan penuh"
+            );
+        }
+
+        function enterFullscreen() {
+            const root = doc.documentElement;
+            if (root.requestFullscreen) {
+                return root.requestFullscreen();
+            }
+            if (root.webkitRequestFullscreen) {
+                return root.webkitRequestFullscreen();
+            }
+            if (root.msRequestFullscreen) {
+                return root.msRequestFullscreen();
+            }
+        }
+
+        function exitFullscreen() {
+            if (doc.exitFullscreen) {
+                return doc.exitFullscreen();
+            }
+            if (doc.webkitExitFullscreen) {
+                return doc.webkitExitFullscreen();
+            }
+            if (doc.msExitFullscreen) {
+                return doc.msExitFullscreen();
+            }
+        }
+
+        let button = doc.getElementById(buttonId);
+
+        if (!button) {
+            button = doc.createElement("button");
+            button.id = buttonId;
+            button.type = "button";
+            doc.body.appendChild(button);
+
+            button.addEventListener("click", function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                try {
+                    if (isFullscreen()) {
+                        exitFullscreen();
+                    } else {
+                        enterFullscreen();
+                    }
+                } catch (error) {
+                    console.error("Full screen tidak dapat dibuka:", error);
+                }
+            });
+        }
+
+        updateButton(button);
+
+        if (!doc.__jpkaFullscreenListenerAdded) {
+            doc.addEventListener("fullscreenchange", function () {
+                updateButton(doc.getElementById(buttonId));
+            });
+            doc.addEventListener("webkitfullscreenchange", function () {
+                updateButton(doc.getElementById(buttonId));
+            });
+            doc.__jpkaFullscreenListenerAdded = true;
+        }
+    })();
+    </script>
+    """,
+    height=0,
+    width=0
+)
+
 # =======================
 # FUNGSI UMUM
 # =======================
