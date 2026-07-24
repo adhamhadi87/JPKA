@@ -4293,3 +4293,197 @@ elif menu == "5. Cash Flow":
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         use_container_width=True
     )
+
+# =========================================================
+# FINAL TRAFFIC LIGHT HOUSING OVERRIDE
+# Tujuan:
+# - Kekalkan semua nombor, maklumat, button key dan function asal.
+# - Hanya ubah rupa 3 button traffic light kepada housing lampu isyarat.
+# - Warna hijau/kuning/merah berada dalam bulatan tengah.
+# =========================================================
+st.markdown(r"""
+<style>
+/* Susunan wrapper bagi setiap traffic light */
+div[class*="st-key-btn_jpka_hijau"],
+div[class*="st-key-btn_jpka_kuning"],
+div[class*="st-key-btn_jpka_merah"] {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    overflow: visible !important;
+}
+
+/* Housing utama lampu isyarat */
+div[class*="st-key-btn_jpka_hijau"] button,
+div[class*="st-key-btn_jpka_kuning"] button,
+div[class*="st-key-btn_jpka_merah"] button {
+    width: 176px !important;
+    min-width: 176px !important;
+    max-width: 176px !important;
+    height: 152px !important;
+    min-height: 152px !important;
+    max-height: 152px !important;
+    padding: 0 !important;
+    margin: 22px auto 12px auto !important;
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: visible !important;
+    border-radius: 24px !important;
+    border: 3px solid #4b4b4b !important;
+    background:
+        linear-gradient(90deg,
+            #111 0%,
+            #3d3d3d 8%,
+            #141414 18%,
+            #050505 50%,
+            #141414 82%,
+            #3d3d3d 92%,
+            #111 100%) !important;
+    box-shadow:
+        0 18px 28px rgba(15,23,42,0.34),
+        inset 0 4px 5px rgba(255,255,255,0.18),
+        inset 0 -11px 16px rgba(0,0,0,0.72),
+        -16px 0 18px -12px rgba(0,0,0,0.80),
+        16px 0 18px -12px rgba(0,0,0,0.80) !important;
+    transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+    cursor: pointer !important;
+    isolation: isolate !important;
+}
+
+/* Bulatan lampu tengah */
+div[class*="st-key-btn_jpka_hijau"] button::before,
+div[class*="st-key-btn_jpka_kuning"] button::before,
+div[class*="st-key-btn_jpka_merah"] button::before {
+    content: "" !important;
+    position: absolute !important;
+    z-index: 1 !important;
+    width: 112px !important;
+    height: 112px !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    border-radius: 50% !important;
+    border: 7px solid #1b1b1b !important;
+    outline: 2px solid rgba(255,255,255,0.22) !important;
+    box-sizing: border-box !important;
+}
+
+/* Cap hitam di bahagian atas housing */
+div[class*="st-key-btn_jpka_hijau"] button::after,
+div[class*="st-key-btn_jpka_kuning"] button::after,
+div[class*="st-key-btn_jpka_merah"] button::after {
+    content: "" !important;
+    position: absolute !important;
+    z-index: 0 !important;
+    width: 76px !important;
+    height: 25px !important;
+    left: 50% !important;
+    top: -22px !important;
+    transform: translateX(-50%) !important;
+    border-radius: 50% 50% 22% 22% !important;
+    border: 3px solid #3a3a3a !important;
+    background: radial-gradient(ellipse at 50% 22%, #666 0%, #272727 45%, #090909 100%) !important;
+    box-shadow:
+        inset 0 3px 4px rgba(255,255,255,0.18),
+        0 4px 6px rgba(0,0,0,0.45) !important;
+}
+
+/* Lampu hijau */
+div[class*="st-key-btn_jpka_hijau"] button::before {
+    background: radial-gradient(circle at 34% 28%, #b9ffc4 0%, #47f26a 28%, #12c83f 58%, #087b26 100%) !important;
+    box-shadow:
+        0 0 16px rgba(36,239,91,0.90),
+        0 0 36px rgba(36,239,91,0.58),
+        inset 0 9px 12px rgba(255,255,255,0.36),
+        inset 0 -15px 20px rgba(0,0,0,0.38) !important;
+}
+
+/* Lampu kuning */
+div[class*="st-key-btn_jpka_kuning"] button::before {
+    background: radial-gradient(circle at 34% 28%, #fffac2 0%, #ffe35a 28%, #ffc400 58%, #b47b00 100%) !important;
+    box-shadow:
+        0 0 16px rgba(255,198,0,0.92),
+        0 0 36px rgba(255,198,0,0.58),
+        inset 0 9px 12px rgba(255,255,255,0.42),
+        inset 0 -15px 20px rgba(0,0,0,0.34) !important;
+}
+
+/* Lampu merah */
+div[class*="st-key-btn_jpka_merah"] button::before {
+    background: radial-gradient(circle at 34% 28%, #ffc0c0 0%, #ff5b55 28%, #ef2929 58%, #9f1118 100%) !important;
+    box-shadow:
+        0 0 16px rgba(255,55,55,0.92),
+        0 0 36px rgba(255,55,55,0.58),
+        inset 0 9px 12px rgba(255,255,255,0.36),
+        inset 0 -15px 20px rgba(0,0,0,0.40) !important;
+}
+
+/* Nombor kekal di tengah dan masih clickable */
+div[class*="st-key-btn_jpka_hijau"] button p,
+div[class*="st-key-btn_jpka_kuning"] button p,
+div[class*="st-key-btn_jpka_merah"] button p,
+div[class*="st-key-btn_jpka_hijau"] button span,
+div[class*="st-key-btn_jpka_kuning"] button span,
+div[class*="st-key-btn_jpka_merah"] button span {
+    position: relative !important;
+    z-index: 3 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 43px !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
+    color: #ffffff !important;
+    text-shadow:
+        0 3px 4px rgba(0,0,0,0.68),
+        0 0 8px rgba(255,255,255,0.26) !important;
+}
+
+/* Nombor kuning kekal putih supaya jelas */
+div[class*="st-key-btn_jpka_kuning"] button p,
+div[class*="st-key-btn_jpka_kuning"] button span {
+    color: #ffffff !important;
+}
+
+/* Hover dan active - function button kekal */
+div[class*="st-key-btn_jpka_hijau"] button:hover,
+div[class*="st-key-btn_jpka_kuning"] button:hover,
+div[class*="st-key-btn_jpka_merah"] button:hover {
+    transform: translateY(-4px) scale(1.025) !important;
+    border-color: #7a7a7a !important;
+    box-shadow:
+        0 23px 34px rgba(15,23,42,0.40),
+        inset 0 4px 5px rgba(255,255,255,0.20),
+        inset 0 -11px 16px rgba(0,0,0,0.72) !important;
+}
+
+div[class*="st-key-btn_jpka_hijau"] button:active,
+div[class*="st-key-btn_jpka_kuning"] button:active,
+div[class*="st-key-btn_jpka_merah"] button:active {
+    transform: translateY(2px) scale(0.985) !important;
+}
+
+/* Responsive untuk skrin lebih kecil */
+@media (max-width: 1100px) {
+    div[class*="st-key-btn_jpka_hijau"] button,
+    div[class*="st-key-btn_jpka_kuning"] button,
+    div[class*="st-key-btn_jpka_merah"] button {
+        width: 148px !important;
+        min-width: 148px !important;
+        max-width: 148px !important;
+        height: 132px !important;
+        min-height: 132px !important;
+        max-height: 132px !important;
+    }
+
+    div[class*="st-key-btn_jpka_hijau"] button::before,
+    div[class*="st-key-btn_jpka_kuning"] button::before,
+    div[class*="st-key-btn_jpka_merah"] button::before {
+        width: 96px !important;
+        height: 96px !important;
+    }
+}
+</style>
+""", unsafe_allow_html=True)
